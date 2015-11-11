@@ -1,0 +1,21 @@
+tagline: 'PumpUp <b>dev</b>'
+
+exclude: ['*.sublime-project', '*.sublime-workspace', 'README.md']
+
+markdown: redcarpet
+redcarpet:
+  extensions: ['smart', 'autolink', 'strikethrough', 'space_after_headers', 'superscript', 'hard_wrap', 'tables']
+
+permalink: pretty
+
+url: http://pumpup.com/
+url_github: https://github.com/pumpupapp/
+
+emoji_dir: https://github.global.ssl.fastly.net/images/icons/emoji/
+
+paginate: 5
+paginate_path: 'page/:num'
+
+gems: [
+  'jekyll-paginate'
+]

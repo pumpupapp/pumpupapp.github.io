@@ -1,0 +1,44 @@
+---
+layout: default
+---
+
+<article class="content">
+  <div class="content__box content__body">
+
+    {% if page.external %}
+
+      <p>
+        <a
+          class="link--external"
+          href="{{ page.external_url }}"
+          title="Opens in a new window"
+          target="_blank"><!--
+         -->External post<!--
+         --><span class="link__icon"></span>
+        </a>
+      </p>
+
+    {% else %}
+
+      {{ content | emojify }}
+
+      {% if page.postscript %}
+        <footer class="content__postscript">
+          <h4>Footnotes</h4>
+          <ol>
+            {% for postscript in page.postscript %}
+              <li class="content__postscript-item" id="postscript_{{ forloop.index }}">
+                <a class="content__postscript-hook"
+                  href="#postscript_{{ forloop.index }}"
+                  name="postscript_{{ forloop.index }}"></a>
+                {{ postscript | markdownify | emojify }}
+              </li>
+            {% endfor %}
+          </ol>
+        </footer>
+      {% endif %}
+
+    {% endif %}
+
+  </div>
+</article>

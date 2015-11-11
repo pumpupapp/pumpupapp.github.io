@@ -1,0 +1,180 @@
+<!-- remove notepad shit -->
+<!doctype html>
+
+<html lang="en">
+
+
+  <meta charset="utf-8">
+
+  <meta name="author" content="PumpUp - {{ site.url }}">
+  <meta name="copyright" content="&copy; PumpUp">
+  {% if page.meta %}
+    <meta name="description" content="{{ page.meta }}">
+  {% endif %}
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@pumpup">
+  <meta name="twitter:domain" content="pumpup.com">
+  <meta name="twitter:creator" content="@pumpup">
+  {% if page.title %}
+    {% if page.overview_page %}
+      <meta name="twitter:title" content="{{ page.title }} / PumpUp">
+    {% else %}
+      <meta name="twitter:title" content="{{ page.title_prefix }}{{ page.title }}{{ page.title_suffix }} / PumpUp">
+    {% endif %}
+  {% else %}
+    <meta name="twitter:title" content="PumpUp">
+  {% endif %}
+  {% if page.meta %}
+    <meta name="twitter:description" content="{{ page.meta }}">
+  {% endif %}
+
+  <meta name="viewport" content="width=device-width">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+
+  <meta http-equiv="cleartype" content="on">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+  {% if page.title %}
+    {% if page.overview_page %}
+      <title>{{ page.title }} / PumpUp</title>
+    {% else %}
+      <title>{{ page.title_prefix }}{{ page.title }}{{ page.title_suffix }} / PumpUp</title>
+    {% endif %}
+  {% else %}
+    <title>PumpUp</title>
+  {% endif %}
+
+
+  <link rel="shortcut icon" href="/favicon.png">
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,800italic,300,600,800">
+  <link rel="stylesheet" href="/css/main.css">
+
+
+  <script src="/js/shiv.js"></script>
+
+
+
+  {% unless page.empty_page %}
+
+    <div class="menu">
+      <nav class="menu__nav" id="menu">
+        <div class="content content--flat-bottom">
+          <a class="menu__button-close" href="#"></a>
+          <div class="content__box">
+            <h4 class="title--flat emphasize">Menu</h4>
+          </div>
+        </div>
+        <div class="content content-freeform content--pad-bottom">
+          <ul class="list--plain list--flat">
+            <li class="list__item">
+              <a class="link--block" href="/">
+                <div class="content">
+                  <div class="content__box content__box--pad-half">Home</div>
+                </div>
+              </a>
+            </li>
+            <li class="list__item">
+              <a class="link--block" href="http://pumpup.com">
+                <div class="content">
+                  <div class="content__box content__box--pad-half">PumpUp.com</div>
+                </div>
+              </a>
+            </li>
+            <li class="list__item">
+              <a class="link--block" href="https://github.com/pumpupapp?tab=repositories">
+                <div class="content">
+                  <div class="content__box content__box--pad-half">Projects</div>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <aside class="menu__toggler alignright">
+        <a class="menu__opener button-menu{% if page.id != "home" %} button-menu--inverse{% endif %}" href="#menu"></a>
+        <a class="menu__closer button-menu{% if page.id != "home" %} button-menu--inverse{% endif %}" href="#"></a>
+      </aside>
+    </div> <!-- .menu -->
+
+  {% endunless %}
+
+
+  <header class="header{% if page.id != "home" %} header--colored{% endif %}">
+    <div class="content">
+      <div class="content__box content__box--pad-one">
+        {% unless page.empty_page %}
+          <h1 class="header__wrapper title--base-size title--thin title--flat">
+            <a class="header__link header__link--{% if page.id != "home" %}dimmed title--dimmed{% else %}dark{% endif %}" href="#menu">
+              {% if page.id != "home" %}
+                {{ site.tagline | truncatewords: 3 | remove: '...' }}
+              {% else %}
+                {{ site.tagline }}
+              {% endif %}
+            </a>
+          </h1>
+        {% endunless %}
+        {% if page.title %}
+          <div class="header__title aligncenter">
+            {% if page.date %}
+              <p class="content__subtitle title--dimmed">{{ page.date | date: "%B %d, %Y" }}</p>
+            {% endif %}
+            {% if page.overview_page %}
+              <h1 class="title title--thin title--flat">{{ page.title }}</h1>
+            {% else %}
+              <h1 class="title title--thin title--flat">{% if page.x_post %}X-post: {% endif %}{{ page.title }}{{ page.title_suffix }}</h1>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </header> <!-- .header -->
+
+
+  {{ content }}
+
+
+  {% unless page.empty_page %}
+
+    <footer class="footer gui-flip">
+      <div class="content">
+        {% if page.id != "home" %}
+          <div class="content__box content__box--flat">
+            {% if page.notepad_page and page.overview_page != true %}
+              <a class="button-block" href="/notepad">Back to notepad</a>
+            {% else %}
+              <a class="button-block" href="/">Back to home</a>
+            {% endif %}
+          </div>
+        {% endif %}
+        <div class="content__box aligncenter">
+          <ul class="list--plain list--inline">
+            <li class="list__item">
+              <a class="button-cube" href="http://twitter.com/pumpup" target="_blank">
+                <span class="gui-icon gui-icon--twitter"></span>
+              </a>
+            </li><!--
+           --><li class="list__item">
+              <a class="button-cube" href="http://github.com/pumpupapp" target="_blank">
+                <span class="gui-icon gui-icon--github"></span>
+              </a>
+            </li><!--
+           --><li class="list__item">
+              <a class="button-cube" href="mailto:support@pumpup.com">
+                <span class="gui-icon gui-icon--email"></span>
+              </a>
+            </li>
+          </ul>
+          <p>&copy; {{ site.time | date: "%Y" }} PumpUp</p>
+        </div>
+      </div>
+    </footer> <!-- .footer -->
+
+  {% endunless %}
+
+
+</html>
+
+

@@ -1,0 +1,53 @@
+---
+layout: default
+id: home
+---
+
+<main class="content content--landing">
+  <div class="content__box content__box--flat-top">
+    {% for post in paginator.posts %}
+      <h2 class="title title--thin title--flat">
+
+        <a
+          {% if post.external %}
+            class="title__link link--external"
+            href="{{ post.external_url }}"
+            title="Opens in a new window"
+            target="_blank"
+          {% else %}
+            class="title__link"
+            href="{{ post.url }}"
+          {% endif %}
+          ><!--
+         --><span class="title__label">{% if post.x_post %}X-post: {% endif %}{{ post.title }}</span><!--
+          {% if post.external %}
+           --><span class="link__icon"></span><!--
+          {% endif %}
+         --><small class="title__sub">{{ post.date | date: "%B&nbsp;%d,&nbsp;%Y" }}</small>
+       </a>
+
+      </h2>
+    {% else %}
+      <h2 class="title title--thin title--flat">🙏</h2>
+    {% endfor %}
+  </div>
+</main>
+
+{% if paginator.total_pages > 1 %}
+  <aside class="content">
+    <div class="content__box content__box--flat-top aligncenter">
+      <div><!--
+        {% if paginator.previous_page %}
+         --><a class="link--underline" href="{{ paginator.previous_page_path }}">Newer posts</a><!--
+        {% endif %}
+       -->{% if paginator.previous_page and paginator.next_page %}&nbsp; &nbsp; {% endif %}<!--
+        {% if paginator.next_page %}
+         --><a class="link--underline" href="{{ paginator.next_page_path }}">Older posts</a><!--
+        {% endif %}
+     --></div>
+      <p>
+        <small class="dimmed-extra">({{ paginator.page }} of {{ paginator.total_pages }})</small>
+      </p>
+    </div>
+  </aside>
+{% endif %}
