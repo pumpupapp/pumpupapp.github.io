@@ -1,4 +1,3 @@
-<!-- remove notepad shit -->
 <!doctype html>
 
 <html lang="en">
@@ -142,11 +141,7 @@
       <div class="content">
         {% if page.id != "home" %}
           <div class="content__box content__box--flat">
-            {% if page.notepad_page and page.overview_page != true %}
-              <a class="button-block" href="/notepad">Back to notepad</a>
-            {% else %}
-              <a class="button-block" href="/">Back to home</a>
-            {% endif %}
+            <a class="button-block" href="/">Back to home</a>
           </div>
         {% endif %}
         <div class="content__box aligncenter">
