@@ -1,0 +1,24 @@
+{
+  "name": "dev.pumpup",
+  "version": "0.0.1",
+  "description": "The dev blog for the world’s most inspiring community for healthy & active living",
+  "scripts": {
+    "start": "jekyll serve --draft",
+    "setup-site": "env DEBUG='*' node ./scripts/setup-site.js",
+    "push-site": "env DEBUG='*' node ./scripts/push-site.js"
+  },
+  "author": {
+    "name": "PumpUp",
+    "email": "devs@pumpup.co",
+    "url": "http://pumpup.co"
+  },
+  "homepage": "http://pumpupapp.github.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pumpupapp/pumpupapp.github.io"
+  },
+  "devDependencies": {
+    "debug": "2.2.0",
+    "shelljs": "0.5.3"
+  }
+}
