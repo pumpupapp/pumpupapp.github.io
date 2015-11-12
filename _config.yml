@@ -1,6 +1,15 @@
 tagline: 'PumpUp <b>dev</b>'
 
-exclude: ['*.sublime-project', '*.sublime-workspace', 'README.md']
+exclude: [
+  '*.sublime-project',
+  '*.sublime-workspace',
+  '*.log',
+  '*.sh',
+  'package.json',
+  'README.md',
+  'node_modules',
+  'scripts'
+]
 
 markdown: redcarpet
 redcarpet:
