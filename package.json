@@ -4,6 +4,7 @@
   "description": "The dev blog for the world’s most inspiring community for healthy & active living",
   "scripts": {
     "start": "jekyll serve --draft",
+    "postinstall": "npm run setup-site",
     "setup-site": "env DEBUG='*' node ./scripts/setup-site.js",
     "push-site": "env DEBUG='*' node ./scripts/push-site.js"
   },
