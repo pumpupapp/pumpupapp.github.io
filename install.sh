@@ -14,6 +14,10 @@ command jekyll -v >/dev/null 2>&1 && echo "Jekyll installed" || {
 }
 jekyll -v
 
+# install jekyll plugins
+echo "Installing Jekyll plugins"
+sudo gem install gemoji jekyll-paginate redcarpet
+
 # install node
 command node -v >/dev/null 2>&1 && echo "Node installed" || {
   echo "Node not found... installing now"
