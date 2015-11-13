@@ -801,11 +801,11 @@ input[type=search] {
   color: #2dbdf2;
 }
 .button-menu--inverse {
-  color: #abd8f9;
+  color: #9fe1f9;
 }
 .button-menu--inverse:hover {
   color: #fff;
-  background: #269bf0;
+  background: #0d97c9;
 }
   .button-menu:before,
   .button-menu:after {
@@ -828,9 +828,9 @@ input[type=search] {
 
 
 .button-block {
-  border: 2px solid #f34a5a;
+  border: 2px solid #4fcf7c;
   background: none;
-  color: #f34a5a;
+  color: #4fcf7c;
   font-weight: 600;
   display: block;
   text-align: center;
@@ -844,7 +844,7 @@ input[type=search] {
       transition: all .15s ease-out;
 }
 .button-block:hover {
-  background: #f34a5a;
+  background: #4fcf7c;
   color: #fff;
 }
 
@@ -1121,7 +1121,7 @@ ol:last-child {
 }
 
 .title--dimmed {
-  color: #abd8f9;
+  color: #9fe1f9;
   letter-spacing: 0;
 }
 
@@ -1404,8 +1404,18 @@ ol:last-child {
     }
 
   .content__body {
+    position: relative;
     padding-bottom: 5em;
   }
+    .content__body h1,
+    .content__body h2 {
+      color: #ccc;
+    }
+    .content__body h1:after,
+    .content__body h2:after {
+      content: " \00AB  invalid size";
+      color: red;
+    }
     .content__body h3 {
       margin: 3em 0 0;
     }
@@ -1427,6 +1437,34 @@ ol:last-child {
     }
     .content__body a:hover {
       text-decoration: underline;
+    }
+    .content__body img[full],
+    .content__body img[center],
+    .content__body img[left],
+    .content__body img[right] {
+      display: block;
+      margin: 0 auto;
+    }
+    .content__body img[full] {
+      max-width: 140%;
+      margin-left: -20%;
+      margin-right: -20%;
+    }
+
+    .content__permalink {
+      position: absolute;
+      right: 100%;
+      padding: 5px;
+      margin-right: 5px;
+      margin-top: -5px;
+      color: inherit;
+      opacity: 0.25;
+      font-weight: 100;
+      transition: 0.25s;
+    }
+    .content__body .content__permalink:hover {
+      opacity: 1;
+      text-decoration: none;
     }
 
   .content__postscript {
@@ -1510,6 +1548,18 @@ ol:last-child {
   .content--landing {
     text-align: center;
   }
+    .content__body img[left] {
+      float: left;
+      margin-left: -20%;
+      margin-right: 1em;
+      margin-bottom: inherit;
+    }
+    .content__body img[right] {
+      float: right;
+      margin-right: -20%;
+      margin-left: 1em;
+      margin-bottom: inherit;
+    }
 
   .title {}
     .title__sub {
