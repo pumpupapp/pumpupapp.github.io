@@ -1,7 +1,7 @@
 ---
 layout: post
 title: How PumpUp Setup Buck For Android Reducing Compile Time From 3 Minutes To 10 Seconds
-author: \@AnthonyUccello
+author: AnthonyUccello
 ---
 
 This post will show how I setup Buck & Exopackage for PumpUp and go over troubleshooting the errors that came up. Setting up Buck brought our build times down from 3 minutes, to 10 seconds. If you just want your hands on the build script scroll to the bottom. Note: Because most of our codebase is JavaScript, I used just one `BUCK` file and some convenience dependencies in a `BuckConstants` file. For the absolute best results, you should use multiple `BUCK` files and declare dependencies independently. Extra special thanks to [Shawn Wilsher](https://github.com/sdwilsh) for all the Buck help! 
