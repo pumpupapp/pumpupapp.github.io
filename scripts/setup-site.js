@@ -1,7 +1,5 @@
 var debug = require('debug')('setup-site')
-var cd    = require('shelljs').cd
 var ls    = require('shelljs').ls
-var echo  = require('shelljs').echo
 var exec  = require('shelljs').exec
 
 var pkg   = require('../package.json')
