@@ -1394,12 +1394,12 @@ ol:last-child {
       font-size: .75em;
       margin: .5em 0;
     }
-    .content__subtitle:before,
-    .content__subtitle:after {
+    .content__subtitle--dashed:before,
+    .content__subtitle--dashed:after {
       content: "\2014";
       margin-right: .5em;
     }
-    .content__subtitle:after {
+    .content__subtitle--dashed:after {
       margin-left: .5em;
     }
 
