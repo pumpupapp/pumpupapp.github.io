@@ -61,3 +61,30 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+---
+
+### Did I mention code blocks?
+
+Yeah.. we got those too. *With* syntax highlighting!
+
+```js
+/**
+ * Sorts and filters a list of phrases by matching the given search phrase.
+ * @param  {String[]} phrases          The list of phrases to match against
+ * @param  {String}   searchPhrase     The phrase to search for
+ * @param  {String}   [phraseProperty] The property name of the phrase on the objects in the collection
+ * @return {Array}                     The sorted and filtered list of phrases
+ */
+function filterAndSort(phrases, searchPhrase, phraseProperty) {
+  return _.chain(phrases)
+    .map(phrase => getMatches(phrase, searchPhrase, phraseProperty))
+    .filter(matches => matches.words.length >= matches.searchWords.length)
+    .filter(matches => matches.coefficient >= 0.025 * matches.searchWords.join('').length)
+    .sortBy(matches => matches.coefficient * -1)
+    .map(matches => matches.value)
+    .value()
+}
+```
+
+<div center>:grin:</div>

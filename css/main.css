@@ -460,6 +460,7 @@ body {
   font-family: "Open Sans", sans-serif;
   font-weight: 100;
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 b,
@@ -1451,6 +1452,10 @@ ol:last-child {
       margin-right: -20%;
     }
 
+    .content__body div[center] {
+      text-align: center;
+    }
+
     .content__permalink {
       position: absolute;
       right: 100%;
@@ -1559,6 +1564,11 @@ ol:last-child {
       margin-right: -20%;
       margin-left: 1em;
       margin-bottom: inherit;
+    }
+
+    .content__body .highlight {
+      margin-left: -10%;
+      margin-right: -10%;
     }
 
   .title {}
