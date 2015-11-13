@@ -13,7 +13,16 @@ exclude: [
 
 markdown: redcarpet
 redcarpet:
-  extensions: ['smart', 'autolink', 'strikethrough', 'space_after_headers', 'superscript', 'hard_wrap', 'tables']
+  extensions:
+    - autolink
+    - hard_wrap
+    - highlight
+    - strikethrough
+    - smart
+    - space_after_headers
+    - superscript
+    - tables
+    - with_toc_data
 
 permalink: pretty
 
@@ -25,6 +34,5 @@ emoji_dir: https://github.global.ssl.fastly.net/images/icons/emoji/
 paginate: 5
 paginate_path: 'page/:num'
 
-gems: [
-  'jekyll-paginate'
-]
+gems:
+  - jekyll-paginate
