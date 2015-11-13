@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<article class="content">
+<article class="content content--post">
   <div class="content__box content__body">
 
     {% if page.external %}
@@ -20,7 +20,7 @@ layout: default
 
     {% else %}
 
-      {{ content | emojify }}
+      {{ content | emojify | mentionify }}
 
       {% if page.postscript %}
         <footer class="content__postscript">
