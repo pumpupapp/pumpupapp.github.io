@@ -1,9 +1,9 @@
 var debug = require('debug')('push-site')
 var cd    = require('shelljs').cd
 var ls    = require('shelljs').ls
-var echo  = require('shelljs').echo
 var exec  = require('shelljs').exec
-var rm    = require('shelljs').rm
+
+var util  = require('./util')
 
 var files = ls('-A', '_site/.git')
 
@@ -12,6 +12,11 @@ if (!files || !files.length) {
   require('./setup-site')
   debug('run the command again')
   process.exit(0)
+}
+
+if (util.isDirtyWorkingCopy()) {
+  debug('cannot push the site with a dirty working copy')
+  process.exit(1)
 }
 
 debug('clearing old site files')
