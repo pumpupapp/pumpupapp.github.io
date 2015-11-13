@@ -6,7 +6,7 @@ author: \@AnthonyUccello
 
 This post will show how I setup Buck & Exopackage for PumpUp and go over troubleshooting the errors that came up. Setting up Buck brought our build times down from 3 minutes, to 10 seconds. If you just want your hands on the build script scroll to the bottom. Note: Because most of our codebase is JavaScript, I used just one `BUCK` file and some convenience dependencies in a `BuckConstants` file. For the absolute best results, you should use multiple `BUCK` files and declare dependencies independently. Extra special thanks to [Shawn Wilsher](https://github.com/sdwilsh) for all the Buck help! 
 
-![](/media/frymeme.jpg)
+<img center src='/media/frymeme.jpg' />
 
 It can be a little intimidating setting up Buck if you don't know Regex or Python ---- but stick with it, its well worth the time you will save! This post will assume absolutely no knowledge Python or Regex and I'll explain every step I took to getting Buck working. 
 
@@ -14,7 +14,7 @@ Say you save 2 minutes off your build time and you have 10 engingeers who compil
 
 #### And last but not least...
 
-![](/media/youmean.jpeg)
+<img center src='/media/youmean.jpeg' />
 
 If you've spent some time coding on Android you might encounter the nasty [65536 code limit](http://developer.android.com/intl/es/tools/building/multidex.html). Adding the Google Play Services library will likely shove you right over that limit. Buck is multi-dexed so you will never have to worry about this issue.
 
@@ -28,7 +28,7 @@ This post will assume starting point from the Buck setup using their [quick star
 
 Here is the project structure I am converting over to build with Buck:
 
-![](/media/proj.png)
+<img center src='/media/proj.png' />
 
 ### What Is Buck?
 
@@ -54,7 +54,7 @@ A [build rule](https://buckbuild.com/concept/build_rule.html) is a rule that wil
 
 A [build target](https://buckbuild.com/concept/build_target.html) is the name of a build rule. When you make a build rule it ALWAYS has a name. This name the build target when other rules need to depend on this rule. When a build rule depends on another it uses ‘:build-rule-name’ (which is the build target).
 
-![](/media/build.jpg)
+<img center src='/media/build.png' />
 
 ### All Files Must Live Under The Project Root
 
@@ -117,7 +117,7 @@ And the `BuckConstants` file is empty. That will change soon but first...
 
 ### Library Build Rules
 
-![](/media/yodawgmeme.jpg)
+<img center src='/media/yodawgmeme.jpg' />
 
 One thing to clear up is the term library. The [android_library](https://buckbuild.com/rule/android_library.html) rule will be used for the following:
 
@@ -158,7 +158,7 @@ So rather than write a build rule for everything, we are going to create a dicti
 
 Here is the libs folder in my project:
 
-![](/media/libs.png)
+<img center src='/media/libs.png' />
 
 I am going to use the `prebuilt_jar` rule for all these but it's important to note that these aren’t ALL our .jar files. One of our Library Projects has .jar files which we will be going to deal with later in the External Libraries section.
 
@@ -172,7 +172,7 @@ JAR_DEPS = []
 
 And now I am going to add all the .jar files from the libs folder.
 
-![](/media/compilememe.jpeg)
+<img center src='/media/compilememe.jpeg' />
 
 ```python
 ### Build rules for every .jar in the /libs folder.
@@ -189,7 +189,7 @@ This is looping the libs folder and getting every `.jar` file. Its then appendin
 
 The regex here is basically getting the name of the jar (e.g. gcm.jar) and creating a name (build target identifier) for it (.e.g jars__gcm). To see for yourself you can check the goings-on inside the `buck-out/gen` folder when you do buck builds (here's a snippet of what might you will find below). This is what your build rules are generating!
 
-![](/media/buckout.png)
+<img center src='/media/buckout.png' />
 
 `glob` does what you expect, gets all the matching files in that directory.
 
@@ -224,7 +224,7 @@ Now that I have the libs folder taken care of, its time to tackle the Library Pr
 
 Let's take a look at at a Library Project Xwalk:
 
-![](/media/xwalk.png)
+<img center src='/media/xwalk.png' />
 
 Library Projects can have their own src, libraries, assets, and res folder so like like we the main application code and resources/assets, I need to do the same for the external libraries (I'll cover this later). Before it easy with just using the `prebuilt_jar` rule (but I didn't put them into a android_library rule yet which I will need to but I am going to get all `.jars` first!). These libraries have source code, libraries of their own, resources, and assets! That means these libraries will need to depend (`dep`) on some `android_resource` rules.
 
@@ -402,7 +402,7 @@ android_library(
 
 Notice how this library file depends on the `xwalk-lib-res` AND `all-jars`? Thats because earlier we grabbed the `.jar` files (remember the `PREBUIT_JARS` in `BuckConstants` and the loop in the `BUCK` file that calls `prebuilt_jar`) it neede and bundled all its needed resoures and assets (with `RESOURCES` and the loop in the `BUCK` file that builds all of them with `android_resource`). This library project has been setup and because I made all those parser objects in my `BuckConstants` and loops that handle them (by calling the appropriate build rule) in my `BUCK` file adding another library project (and later the external libraries) will be very easy.
 
-![](/media/cordovalib.png)
+<img center src='/media/cordovalib.png' />
 
 This is the CordovaLib Library Project. This one does have `.java `files under the `src` folder but it doesn't have any libraries (`.jars`) of its own. 
 
@@ -475,7 +475,7 @@ That does it for library projects. Now its time for the trickiest part...
 
 In your `build.gradle` file for your project you probably have something like this:
 
-![](/media/deps.png)
+<img center src='media/deps.png' />
 
 Well the ones like `compile 'com.android.support:support-v4:22.0.0'` end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state). We don't want them exploded. We want the .jar (or .aar) files. We want the raw goods!
 
@@ -487,17 +487,17 @@ It tells me I can look in `<sdk>/extras/android/support/v7/` to find my app comp
 
 The tricky part is knowing what you actually need to look for. For example in my project there was all this:
 
-![](/media/externals.png)
+<img center src='/media/externals.png' />
 
 There is some redundancy here because there isn't a 1:1 correlation to adding something to your `build.gradle` file and getting 1 out put here. For example, there are 4 `play-services` listed but all of them 'belong' to the `google-play-services` library.
 
 So I just navigated to `<sdk>/extras/android/support/v7/` path
 
-![](/media/fetch.png)
+<img center src='/media/fetch.png' />
 
 And grabbed the `res` folder, the `AndroidManifest.xml` and the `.jar` files. (I have plugin that also used app-compat-v4 so I remove it later otherwise I get a duplicate dex merge error) and copied them into my `ExternalLibs` folder. I also did this for `multi-dex` and `google-play-services` by digging around in my `<sdk>/extras/android/` directory. This is what my `ExternalLibs` ended up looking like.
 
-![](/media/externallibs.png)
+<img center src='/media/externallibs.png' />
 
 This is now EXACTLY like a library project, so I just need to update my `PREBUILT_JARS`, `RESOURCES`, and `LIBRARIES` objects with the appropriate paths. (Am I repeating myself? Good!).
 
@@ -698,7 +698,7 @@ I was getting a dex merge error saying my files were too big so I had to add the
 
 After all this I can now build my Android project at light speed:
 
-![](/media/fast.png)
+<img center src='/media/fast.png' />
 
 Here is the final `BuckConstants` file.
 
