@@ -28,11 +28,11 @@ You can also make headlines. But be careful when choosing a level. These are the
 
 If you use any incorrect headline, don't worry, you'll be immediately warned:
 
-# Whoops
+# This heading is too big
 
-## Something Seems Off
+## So is this
 
-Aaaaaaaanyhow, this is how that's that.
+Aaaaaaaanyhow, that's that.
 
 ---
 
