@@ -1042,18 +1042,7 @@ blockquote cite {
  * Tweetquotes
  */
 .twitter-tweet-rendered {
-  display: inline-block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: .5em 0 !important;
-
-  -webkit-border-radius: 4px !important;
-     -moz-border-radius: 4px !important;
-      border-radius: 4px !important;
-
-  -webkit-box-sizing: border-box !important;
-     -moz-box-sizing: border-box !important;
-      box-sizing: border-box !important;
+  margin: 1em auto !important;
 }
 
 
