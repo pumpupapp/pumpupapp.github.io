@@ -1,4 +1,4 @@
-var debug = require('debug')('util')
+var debug = require('debug')('utils:git')
 var exec  = require('shelljs').exec
 
 
@@ -41,5 +41,5 @@ function isDirtyWorkingCopy() {
 
 
 module.exports = {
-  isDirtyWorkingCopy
+  isDirtyWorkingCopy,
 }

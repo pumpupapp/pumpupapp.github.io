@@ -3,10 +3,13 @@
   "version": "0.0.1",
   "description": "The dev blog for the world’s most inspiring community for healthy & active living",
   "scripts": {
+    "prestart": "npm run site:clean",
     "start": "jekyll serve --draft",
-    "postinstall": "npm run setup-site",
-    "setup-site": "env DEBUG='*' node ./scripts/setup-site.js",
-    "push-site": "env DEBUG='*' node ./scripts/push-site.js"
+    "postinstall": "npm run site:clone",
+    "site": "env DEBUG='*' node ./scripts/site.js",
+    "site:clean": "npm run site -- --clean",
+    "site:clone": "npm run site -- --clone",
+    "site:push": "npm run site -- --push"
   },
   "author": {
     "name": "PumpUp",
@@ -19,6 +22,7 @@
     "url": "https://github.com/pumpupapp/pumpupapp.github.io"
   },
   "devDependencies": {
+    "commander": "2.9.0",
     "debug": "2.2.0",
     "shelljs": "0.5.3"
   }
