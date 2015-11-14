@@ -18,7 +18,7 @@ Say you save 2 minutes off your build time and you have 10 engingeers who compil
 
 If you've spent some time coding on Android you might encounter the nasty [65536 code limit](http://developer.android.com/intl/es/tools/building/multidex.html). Adding the Google Play Services library will likely shove you right over that limit. Buck is multi-dexed so you will never have to worry about this issue.
 
-At the end of this post I've listed a whole bunch of errors I ran into. A couple (the last most) are pretty specific to my project (like the missing .so library issue I had with CrossWalk) but you may find it quite helpful for any issue you run into.
+At the end of this post I've listed a whole bunch of errors I ran into. A couple (the last most) are pretty specific to this project (like the missing .so library issue I had with CrossWalk) but you may find it quite helpful for any issue you run into.
 
 PumpUp uses Cordova, CrossWalk, and a number of other libraries.
 
@@ -94,7 +94,7 @@ app/platforms/android/buck-
 app/platforms/android/buck-cache
 ```
 
-The `[alias]` tag will let me build the `.apk` with a simple `buck build pumpup` call in the terminal. This will make Buck start the `pumpup` rule which is (covered last) the name of my [android_binary](https://buckbuild.com/rule/android_binary.html) rule. Because my `android_binary` will depend on all my other rules, Buck then goes and runs through all the build rules in my file. But I'm getting WAY ahead of the curve so lets step back and start with some...
+The `[alias]` tag will let me build the `.apk` with a simple `buck build pumpup` call in the terminal. This will make Buck start the `pumpup` rule which is (covered last) the name of my [android_binary](https://buckbuild.com/rule/android_binary.html) rule. Because the `android_binary` rule will depend on all the other rules, Buck then goes and runs through all the build rules in the file. But I'm getting WAY ahead of the curve so lets step back and start with some...
 
 #### Python Swag
 
@@ -156,13 +156,13 @@ Buck uses Python, but even if you don’t know any Python (like me), don’t fre
 
 So rather than write a build rule for everything, we are going to create a dictionary object, and then loop that calling prebuilt_jar on every object inside it.
 
-Here is the libs folder in my project:
+Here is the libs folder in the project:
 
 <img center src='/media/libs.png' />
 
 I am going to use the `prebuilt_jar` rule for all these but it's important to note that these aren’t ALL our .jar files. One of our Library Projects has .jar files which we will be going to deal with later in the External Libraries section.
 
-This brings in regex. If you don’t know any regex, check out this [tutorial](https://www.youtube.com/watch?v=EkluES9Rvak). Its really good to know, but if you’re in a hurry you can just use the syntax here.
+This brings in Regex. If you don’t know any Regex, check out this [tutorial](https://www.youtube.com/watch?v=EkluES9Rvak). Its really good to know, but if you’re in a hurry you can just use the syntax here.
 
 First to the BUCK file (for now) I add:
 
@@ -216,21 +216,21 @@ And what this has done so far is grab all the .jar files in our libs folder and 
 
 To check that everything is going good, I would run `buck build pumpup` every time I added or changed something. You should do the same as you setup your project!
 
-This is great, but we are just getting started. Now its time for...
+This is great but there's lots to do still. Now its time for...
 
 ### Coding Library Rules For Library Projects
 
-Now that I have the libs folder taken care of, its time to tackle the Library Projects.
+Since I have the libs folder taken care of, its time to tackle the Library Projects.
 
 Let's take a look at at a Library Project Xwalk:
 
 <img center src='/media/xwalk.png' />
 
-Library Projects can have their own src, libraries, assets, and res folder so like like we the main application code and resources/assets, I need to do the same for the external libraries (I'll cover this later). Before it easy with just using the `prebuilt_jar` rule (but I didn't put them into a android_library rule yet which I will need to but I am going to get all `.jars` first!). These libraries have source code, libraries of their own, resources, and assets! That means these libraries will need to depend (`dep`) on some `android_resource` rules.
+Library Projects can have their own src, libraries, assets, and res folder so like we the main application code and resources/assets, I need to do the same for the external libraries (I'll cover this later). Before it easy with just using the `prebuilt_jar` rule (but I didn't put them into a android_library rule yet which I will need to but I am going to get all `.jars` first!). These libraries have source code, libraries of their own, resources, and assets! That means these libraries will need to depend (`dep`) on some `android_resource` rules.
 
 This is the Library Project xwalk_core_library. Notice how it has a `libs` folder with `.jar` files of its own. It also has a `src` folder (that could have `.java` code but in this case it does not). It also has a special `.so` (shared object, c++, Library, I will come back to that later). It also has its own `AndroidManifest.xml` which is where I will get the package name from. It also has some stuff we are going to completely ignore: `build.gradle`, `xwalk_core_library.iml`, and the `build` folder.
 
-Let's start with what we already know. Those two jar files look awfully familiar. Oh right, they are just like the `.jars` we have in our libs folder. So I just need to add the build rules for these. I also need to make sure  my `android_library` rule for this will depend on the `android_resource` rule. 
+Let's start with what we already know. Those two jar files look awfully familiar. Oh right, they are just like the `.jars` we have in our libs folder. So I just need to add the build rules for these. I also need to make sure the `android_library` rule for this will depend on the `android_resource` rule. 
 
 This is why I choose to use a parse object (i.e. dictionary) that will contain all the data needed to call the `prebuilt_jar`, `android_resource`, and `android_library` rules in a loop, each depending on the previous. This way I have one easy place to put ALL .jar files (Technically we could add the .jar files from our libs folder this way too). Depending on your project you might be better off explicitly declaring dependencies and having your own build order. I didn't notice any slow down so I was happy to do it this way (but keep in mind if you find your builds slower consider splitting your code into mulitple buck files and ditching the convienience dependencies).
 
@@ -244,11 +244,11 @@ PREBUILT_JARS = [
 ]
 ```
 
-`PREBUILT_JARS` is where I will add all `.jar` objects that aren't in my `libs` folder. So this covers the library projects and external libraries which are going to have jars. 
+`PREBUILT_JARS` is where I will add all `.jar` objects that aren't in the `libs` folder. So this covers the library projects and external libraries which are going to have jars. 
 
 As you can see I creating a dictionary that has the name and path for the two jar files. This will be passed later to the `prebuilt_jar` rule in a loop that builds all of these and combines them from the ones I built from the `libs` folder to make one convienient android_library named "all-jars". This will make it easy for the `android_resource` rule to depend on this, and later the final application `android_library` to depend on it as well. I will do the same thing with the `android_resource` rules and the `android_library rules.
 
-Now I will create a loop that will go over each of these objects and call the `prebuilt_jar` rule on them in my `BUCK` file by adding
+Now I will create a loop that will go over each of these objects and call the `prebuilt_jar` rule on them in the `BUCK` file by adding
 
 ```python
 ### Calls prebuilt_jar for each object in PREBUILT_JARS.
@@ -274,9 +274,9 @@ android_library(
 
 I will short form that code later (by passing the arguments as a dictionary and using **).
 
-Recall that JAR_DEPS that I was adding all the names to from all the PREBUILT_JARS? Well here I am creating an `android_library` and just passing it the build targets from all those `prebuilt_jars`.
+Recall that `JAR_DEPS` that I was adding all the names to from all the `PREBUILT_JARS`? Well here I am creating an `android_library` and just passing it the build targets from all those `prebuilt_jars`.
 
-I am taking all the `.jars` from my `libs` folder and all the `.jars` that are in the library projects and putting all of them into one dependency array, `JAR_DEPS`, to make one dependency for all my `.jar` files. What's nice is that now anytime I want to add a `.jar` file, all I do is add it to the appropriate dictionary object in the `BuckConstants` file (which I will be doing a lot of next).
+I am taking all the `.jars` from the `libs` folder and all the `.jars` that are in the library projects and putting all of them into one dependency array, `JAR_DEPS`, to make one dependency for all the `.jar` files. What's nice is that now anytime I want to add a `.jar` file, all I do is add it to the appropriate dictionary object in the `BuckConstants` file (which I will be doing a lot of next).
 
 Lets take a look at everything in the BUCK file till now:
 
@@ -326,7 +326,7 @@ JAR_DEPS = []
 ALL_JARS_PARAMS = {'name':'all-jars', 'exported_deps':JAR_DEPS}
 ```
 
-This will now let me change this rule in my `BUCK` file
+This will now let me change this rule in the `BUCK` file
  
 ```python
 android_library(
@@ -345,7 +345,7 @@ android_library(**ALL_JARS_PARAMS)
 
 Cool. Thats one part down . There's more to compile for this library project so I need to include some more rules. This library project has a `res` folder (which is under `src`). That means we need an `android_resource` rule and an `android_library` rule I am going to make later is going to depend on this.
 
-So in my `BuckConstants` file I add
+So in the `BuckConstants` file I add
 
 ```python
 RESOURCES = [
@@ -355,7 +355,7 @@ RESOURCES = [
 
 The package name I get by opening the `AndroidManifest.xml` (the CrossWalk one) and looking at the `package` tag. The `res` directory is the local path to the res folder.
 
-`RESOURCES` is where I am going to add all resources from now on. Because in my `BUCK` file I will loop all objects inside `RESOURCES` and call `android_resource` on it. So to my BUCK file I added:
+`RESOURCES` is where I am going to add all resources from now on. Because in the `BUCK` file I will loop all objects inside `RESOURCES` and call `android_resource` on it. So to the BUCK file I added:
 
 ```python
 ### Builds android_resource for each resource in resources.
@@ -387,7 +387,7 @@ Now one thing you might notice is the step here:
 
 `library['srcs'] = glob(library['srcs'])`
 
-I can't call glob() in my constants file (since its a `def` file) so I actually need to call glob in the BUCK file. The long hand way of this rule would be like this:
+I can't call glob() in the constants file (since its a `def` file) so I actually need to call glob in the BUCK file. The long hand way of this rule would be like this:
 
 ```
 android_library(
@@ -400,7 +400,7 @@ android_library(
 )
 ```
 
-Notice how this library file depends on the `xwalk-lib-res` AND `all-jars`? Thats because earlier we grabbed the `.jar` files (remember the `PREBUIT_JARS` in `BuckConstants` and the loop in the `BUCK` file that calls `prebuilt_jar`) it neede and bundled all its needed resoures and assets (with `RESOURCES` and the loop in the `BUCK` file that builds all of them with `android_resource`). This library project has been setup and because I made all those parser objects in my `BuckConstants` and loops that handle them (by calling the appropriate build rule) in my `BUCK` file adding another library project (and later the external libraries) will be very easy.
+Notice how this library file depends on the `xwalk-lib-res` AND `all-jars`? Thats because earlier we grabbed the `.jar` files (remember the `PREBUIT_JARS` in `BuckConstants` and the loop in the `BUCK` file that calls `prebuilt_jar`) it neede and bundled all its needed resoures and assets (with `RESOURCES` and the loop in the `BUCK` file that builds all of them with `android_resource`). This library project has been setup and because I made all those parser objects in my `BuckConstants` and loops that handle them (by calling the appropriate build rule) in the `BUCK` file adding another library project (and later the external libraries) will be very easy.
 
 <img center src='/media/cordovalib.png' />
 
@@ -461,7 +461,7 @@ To add the buildconfig file it needs, I added this to the `BuckConstants` file:
 FACEBOOK_BUILD_CONFIG_PARAMS = {'name':'facebook_build_config', 'package':'com.facebook.android'}
 ```
 
-and this to my `BUCK` file.
+and this to the `BUCK` file.
 
 ```python
 android_build_config(**FACEBOOK_BUILD_CONFIG_PARAMS)
@@ -475,7 +475,7 @@ That does it for library projects. Now its time for the trickiest part...
 
 In your `build.gradle` file for your project you probably have something like this:
 
-<img center src='media/deps.png' />
+<img center src='/media/deps.png' />
 
 Well the ones like `compile 'com.android.support:support-v4:22.0.0'` end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state). We don't want them exploded. We want the .jar (or .aar) files. We want the raw goods!
 
@@ -483,9 +483,9 @@ This is where we need to do some digging.
 
 If you look on the Google Docs for [support libraries](http://developer.android.com/intl/es/tools/support-library/features.html) you will see that it tells you where it keeps the files locally (which aren't in the project root which I need).
 
-It tells me I can look in `<sdk>/extras/android/support/v7/` to find my app compat 7 library. And guess what? All I need to do is create a local folder called `ExternalLibs` and drag in these files. Then they are JUST like library projects and I can plug the data into my `PREBUILT_JARS`, `RESOURCES`, and `LIBRARIES` objects!
+It tells me I can look in `<sdk>/extras/android/support/v7/` to find the app compat 7 library. And guess what? All I need to do is create a local folder called `ExternalLibs` and drag in these files. Then they are JUST like library projects and I can plug the data into the `PREBUILT_JARS`, `RESOURCES`, and `LIBRARIES` objects!
 
-The tricky part is knowing what you actually need to look for. For example in my project there was all this:
+The tricky part is knowing what you actually need to look for. For example in the project there was all this:
 
 <img center src='/media/externals.png' />
 
@@ -495,13 +495,13 @@ So I just navigated to `<sdk>/extras/android/support/v7/` path
 
 <img center src='/media/fetch.png' />
 
-And grabbed the `res` folder, the `AndroidManifest.xml` and the `.jar` files. (I have plugin that also used app-compat-v4 so I remove it later otherwise I get a duplicate dex merge error) and copied them into my `ExternalLibs` folder. I also did this for `multi-dex` and `google-play-services` by digging around in my `<sdk>/extras/android/` directory. This is what my `ExternalLibs` ended up looking like.
+And grabbed the `res` folder, the `AndroidManifest.xml` and the `.jar` files. (I have plugin that also used app-compat-v4 so I remove it later otherwise I get a duplicate dex merge error) and copied them into my `ExternalLibs` folder. I also did this for `multi-dex` and `google-play-services` by digging around in the `<sdk>/extras/android/` directory. This is what my `ExternalLibs` ended up looking like.
 
 <img center src='/media/externallibs.png' />
 
-This is now EXACTLY like a library project, so I just need to update my `PREBUILT_JARS`, `RESOURCES`, and `LIBRARIES` objects with the appropriate paths. (Am I repeating myself? Good!).
+This is now EXACTLY like a library project, so I just need to update the `PREBUILT_JARS`, `RESOURCES`, and `LIBRARIES` objects with the appropriate paths. (Am I repeating myself? Good!).
 
-Here's what my `BuckConstants` looks like with all my .jars, library projects, and external libraries handled:
+Here's what the `BuckConstants` looks like with all the .jars, library projects, and external libraries handled:
 
 
 ```python
@@ -561,16 +561,16 @@ KEYSTORE_PARAMS = {'name' : 'debug_keystore', 'store' : 'keystore/debug.keystore
 FACEBOOK_BUILD_CONFIG_PARAMS = {'name' : 'facebook_build_config', 'package' : 'com.facebook.android'}
 ```
 
-Up until now I've been doing everything in my project except my root project files and resources. Now its time to do that (and its why I do my top level build rules as seperate calls because now all my libraries are made and my main application will depend on all of those being made first)
+Up until now I've been doing everything in the project except the root project files and resources. Now its time to do that (and its why I do the top level build rules as seperate calls because now all the libraries are made and the main application will depend on all of those being made first)
 
 
 ### What Files Can Be Ignored?
 
-It can be a little confusing what exactly you need to build so I am going to outline, generally though its easier to pick out the files you need (a lot of folders and files are for the IDE and gradle). Because I have all my libraries handled, all I need are my `src`, `res`, `assets` and `AndroidManifest` files to make my binary. But because I am using Exopackage I need to do an update.
+It can be a little confusing what exactly you need to build so I am going to outline, generally though its easier to pick out the files you need (a lot of folders and files are for the IDE and gradle). Because I have all the libraries handled, all I need are the `src`, `res`, `assets` and `AndroidManifest` files to make the binary. But because I am using Exopackage I need to do an update.
 
 Its explained [pretty well here](https://buckbuild.com/article/exopackage.html#use-exopackage). 
 
-I built the [buck-support-jar](https://buckbuild.com/article/exopackage.html#build-buck-support-library) and put it in my `libs` folder (which means its handled already because there because its handled by the regex loop I wrote at the beginning that gets `.jars` in my `libs1 folder) 
+I built the [buck-support-jar](https://buckbuild.com/article/exopackage.html#build-buck-support-library) and put it in the `libs` folder (which means its handled already because there because its handled by the regex loop I wrote at the beginning that gets `.jars` in the `libs1 folder) 
 
 I created an AppShell.java file:
 
@@ -614,7 +614,7 @@ public class ExopackageApp extends DefaultApplicationLike
 
 And updated my `AndroidManifest.xml` name tag in the application to `android:name=".AppShell"`.
 
-Next I needed to make the build config file for my app.
+Next I needed to make the build config file for the app.
 
 I add this to `BuckConstants`
 
@@ -631,15 +631,15 @@ android_build_config(**ANDROID_BUILD_CONFIG_PARAMS)
 
 The BuildConfig.java should have the   `public static final int EXOPACKAGE_FLAGS = 1;` but it didn't for me which is why I hard coded the 1 in my AppShell.
 
-Next I am going to make my application library but I need to exclude the `AppShell` and `buck-support-library`.
+Next I am going to make the application library but I need to exclude the `AppShell` and `buck-support-library`.
 
-So to my `BuckConstants` I add
+So to the `BuckConstants` I add
 
 ```python
 APP_CLASS_SOURCE = 'src/co/pumpup/app/AppShell.java'
 ```
 
-And then I create a parse object for my main library. In my `BuckConstants` file I add:
+And then I create a parse object for the main library. In the `BuckConstants` file I add:
 
 ```python
 ANDROID_MAIN_LIBRARY_PARAMS = {
@@ -654,7 +654,7 @@ ANDROID_MAIN_LIBRARY_PARAMS = {
 }
 ```
 
-and to my `BUCK` file I add:
+and to the `BUCK` file I add:
 
 ```python
 ANDROID_MAIN_LIBRARY_PARAMS['srcs'] = glob(ANDROID_MAIN_LIBRARY_PARAMS['srcs'], excludes = [APP_CLASS_SOURCE])
@@ -665,7 +665,7 @@ android_library(**ANDROID_MAIN_LIBRARY_PARAMS)
 
 Last but not least I need to create the `android_binary` rule. This is the final step and depends on everything else (no wonder it's last!).
 
-So here is what I added to my `BuckConstants` file
+So here is what I added to the `BuckConstants` file
 
 ```python
 ANDROID_BINARY_PARAMS = {
@@ -694,9 +694,9 @@ then to the `BUCK` file I add:
 android_binary(**ANDROID_BINARY_PARAMS)
 ```
 
-I was getting a dex merge error saying my files were too big so I had to add the `linear_alloc_hard_limit` and `use_linear_alloc_split_dex` rules. The rest is pretty straight forward except the primary_dex_patterns.
+I was getting a dex merge error saying the files were too big so I had to add the `linear_alloc_hard_limit` and `use_linear_alloc_split_dex` rules. The rest is pretty straight forward except the primary_dex_patterns.
 
-After all this I can now build my Android project at light speed:
+After all this I can now build the Android project at light speed:
 
 <img center src='/media/fast.png' />
 
