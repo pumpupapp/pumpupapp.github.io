@@ -1,15 +1,14 @@
 tagline: 'PumpUp <b>dev</b>'
 
-exclude: [
-  '*.sublime-project',
-  '*.sublime-workspace',
-  '*.log',
-  '*.sh',
-  'package.json',
-  'README.md',
-  'node_modules',
-  'scripts'
-]
+exclude:
+  - '*.sublime-project'
+  - '*.sublime-workspace'
+  - '*.log'
+  - '*.sh'
+  - package.json
+  - README.md
+  - node_modules
+  - scripts
 
 markdown: redcarpet
 redcarpet:
@@ -24,7 +23,7 @@ redcarpet:
     - tables
     - with_toc_data
 
-permalink: pretty
+permalink: /post/:title
 
 url: http://pumpup.com/
 url_github: https://github.com/pumpupapp/
