@@ -475,10 +475,9 @@ strong {
  */
 hr {
   display: block;
-  height: 1px;
   border: 0;
-  border-top: 1px solid #eee;
-  margin: 1.5em 0;
+  border-top: 2px solid #eee;
+  margin: 2em 0;
   padding: 0;
 }
 
@@ -487,7 +486,7 @@ hr {
 
   filter: alpha(opacity=24);
   -moz-opacity: .24;
-     opacity: .24;
+       opacity: .24;
 }
 
 .divider--half {
@@ -1013,22 +1012,27 @@ pre > code,
    ========================================================================== */
 
 blockquote {
-  padding: .125em 0 .5em 1em;
-  margin: 1.5em 0 1.5em 40px;
+  margin: 1em 0;
+  padding: 0.75em 1em 0.75em 40px;
+  border: 2px solid #f8f8f8;
   position: relative;
+  border-radius: 4px;
 }
 blockquote:before {
   content: "\201C";
   position: absolute;
-  left: -40px;
-  top: -.25em;
-  font-size: 5em;
+  left: 10px;
+  top: 0;
+  font-size: 3em;
   font-weight: 600;
   color: #ddd;
+  line-height: 1.25;
+  pointer-events: none;
 }
 
 blockquote p {
   margin-bottom: .5em;
+  font-style: italic;
 }
 blockquote footer {
   font-size: .75em;
@@ -1042,18 +1046,7 @@ blockquote cite {
  * Tweetquotes
  */
 .twitter-tweet-rendered {
-  display: inline-block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: .5em 0 !important;
-
-  -webkit-border-radius: 4px !important;
-     -moz-border-radius: 4px !important;
-      border-radius: 4px !important;
-
-  -webkit-box-sizing: border-box !important;
-     -moz-box-sizing: border-box !important;
-      box-sizing: border-box !important;
+  margin: 1em auto !important;
 }
 
 
@@ -1355,7 +1348,7 @@ ol:last-child {
 
 .content {
   margin: 0 auto;
-  max-width: 666px;
+  max-width: 720px;
 }
 .content-freeform {
   max-width: none;
@@ -1451,6 +1444,9 @@ ol:last-child {
       margin-left: -20%;
       margin-right: -20%;
     }
+    .content__body p:first-child img[full] {
+      margin-top: -1.5em;
+    }
 
     .content__body div[center] {
       text-align: center;
@@ -1459,14 +1455,19 @@ ol:last-child {
     .content__permalink {
       position: absolute;
       right: 100%;
-      padding: 5px;
-      margin-right: 5px;
+      padding: 5px 10px 5px 5px;
       margin-top: -5px;
       color: inherit;
-      opacity: 0.25;
+      opacity: 0.15;
       font-weight: 100;
       transition: 0.25s;
     }
+    .content__body h1:hover .content__permalink,
+    .content__body h2:hover .content__permalink,
+    .content__body h3:hover .content__permalink,
+    .content__body h4:hover .content__permalink,
+    .content__body h5:hover .content__permalink,
+    .content__body h6:hover .content__permalink,
     .content__body .content__permalink:hover {
       opacity: 1;
       text-decoration: none;
@@ -1476,9 +1477,6 @@ ol:last-child {
     font-size: .875em;
     font-weight: 100;
     color: #999;
-    border-top: 1px solid #eee;
-    margin-top: 3em;
-    padding-top: 1em;
   }
 
     .content__postscript-item {
@@ -1564,11 +1562,6 @@ ol:last-child {
       margin-right: -20%;
       margin-left: 1em;
       margin-bottom: inherit;
-    }
-
-    .content__body .highlight {
-      margin-left: -10%;
-      margin-right: -10%;
     }
 
   .title {}
