@@ -697,7 +697,7 @@ then to the `BUCK` file I add:
 android_binary(**ANDROID_BINARY_PARAMS)
 ```
 
-I was getting a dex merge error saying the files were too big so I had to add the `linear_alloc_hard_limit` and `use_linear_alloc_split_dex` rules. The rest is pretty straight forward except the primary_dex_patterns.
+I was getting a dex merge error saying the files were too big so I had to add the `linear_alloc_hard_limit` and `use_linear_alloc_split_dex` rules. The rest is pretty straight forward except the `primary_dex_patterns`. The `primary_dex_patterns` are anything your class needs to initialize goes here (otherwise you will get a crash).
 
 After all this I can now build the Android project at light speed:
 
