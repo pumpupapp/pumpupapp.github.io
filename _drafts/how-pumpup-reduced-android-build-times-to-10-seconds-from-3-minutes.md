@@ -32,7 +32,7 @@ Here is the project structure I am converting over to build with Buck:
 
 ### What Is Buck?
 
-Buck is a build tool that uses Ant (instead of Gradle) to build your Android project a lot faster. It saves times by building resources in parallel.
+Buck is a build tool to build your Android project a lot faster. It saves times by building resources in parallel and caching things already built that don't need to be rebuilt.
 
 ### What Is Exopackage?
 
@@ -40,7 +40,7 @@ Exopackage makes incremental builds up to 5X faster. Exopackage speeds up your b
 
 ### What is buckd/Watchman?
 
-buckd uses Watchman to speed up your builds. The time spent parsing BUCK files will go away and JVM cache will be warm so recompiles will be faster.
+buckd uses Watchman to speed up your builds. The time spent parsing BUCK files will go away and JVM cache will be warm so recompiles will be faster. If you use hg, Facebook has made it much faster with Watchman integration.
 
 [Get it here](https://facebook.github.io/watchman/docs/install.html)
 
@@ -52,7 +52,7 @@ A [build file](https://buckbuild.com/concept/build_file.html) is a BUCK file. It
 
 A [build rule](https://buckbuild.com/concept/build_rule.html) is a rule that will generate 0 or 1 file. You will put your build rules inside BUCK files. You will need specialized build rules for each of the output files you need to make. The most common ones are [android_library](https://buckbuild.com/rule/android_library.html) and [android_resource](https://buckbuild.com/rule/android_resource.html).
 
-A [build target](https://buckbuild.com/concept/build_target.html) is the name of a build rule. When you make a build rule it ALWAYS has a name. This name the build target when other rules need to depend on this rule. When a build rule depends on another it uses ‘:build-rule-name’ (which is the build target).
+A [build target](https://buckbuild.com/concept/build_target.html) is the addressable target of a build rule. When you make a build rule it ALWAYS has a name. This is the name when other rules need to depend on this rule. When a build rule depends on another it uses ‘:build-rule-name’ (which is the build target).
 
 <img center src='/media/build.png' />
 
@@ -68,7 +68,7 @@ For now lets start with the...
 
 ### Buck Setup
 
-The first step was putting in the `.buckconfig` in the project root (which you should have from the [quickstart](https://buckbuild.com/setup/quick_start.html))
+The first step was putting in the `.buckconfig` in the project root (which you should have from the [quickstart](https://buckbuild.com/setup/quick_start.html)) and you can add more config options [outlined here](https://buckbuild.com/concept/buckconfig.html#project).
 
 ```python
 [alias]
@@ -76,13 +76,13 @@ The first step was putting in the `.buckconfig` in the project root (which you s
 [java]
     src_roots = /src
 [project]
-    # IntelliJ requires that every Android module have an
-    # AndroidManifest.xml file associated with it. In practice,
-    # most of this is unnecessary boilerplate, so we create one
-    # "shared" AndroidManifest.xml file that can be used as a default.
     default_android_manifest = AndroidManifest.xml
+    ignore = .git
+    temp_files = ^#.*#$, .*~$, .*\.swp$
 [android]
     target = Google Inc.:Google APIs:23
+[project]
+  watchman_query_timeout_ms = 3000
 ```
 
 and updating the `.ignore` (because you use Github right?)
@@ -122,12 +122,11 @@ And the `BuckConstants` file is empty. That will change soon but first...
 One thing to clear up is the term library. The [android_library](https://buckbuild.com/rule/android_library.html) rule will be used for the following:
 
 1. .jar files & .aar files (prebuilt_jar or android_prebuilt_aar needs to be used first!)
-3. Library Projects
-4. Library Projects
-5. .java files
-6. .aar files
-7. AppShell (this is for Exopackage)
-7. The `src`, `res` and `assets` folders (you know all the code you wrote and the resources you used)
+2. Library Projects
+3. .java files
+4. .aar files
+5. AppShell (this is for Exopackage)
+6. The `src`, `res` and `assets` folders (you know all the code you wrote and the resources you used)
 
 All of my .java files will be converted to a library, and the `res` and `assets` folder will be created with an [android_resource](https://buckbuild.com/rule/android_resource.html) rule (just like I did for the external libraries and library projects). As a reminder `android_library` rule will depend on the `android_resouce` rule. Which makes sense, we need our resources and assets along with the `.java` code to run! The `android_resource rule` covers the `res, `assets`, and the `package name`. 
 
@@ -135,7 +134,11 @@ The important take away with Buck is that you are turning your `.java` code & re
 
 ### Coding Library Rules For .jars
 
-You might be thinking its time to use `android_library` for `.jars` since `.jars` are libraries aren’t they!? Correct...but you will often need to use `android_library` and `android_resouce` together because many times a library has src/res/asset files. If a library is a `.jar` file you first use `prebuilt_jar` and then `android_library` which will depend on it (with the `exported_deps` arg): you can think of this as a special rule. This can be a little confusing so keep this in mind. Here is the long way to write it.
+You might be thinking its time to use `android_library` for `.jars` since `.jars` are libraries aren’t they!? Correct...but you will often need to use `android_library` and `android_resouce` together because many times a library has src/res/asset files. If a library is a `.jar` file you first use `prebuilt_jar` and then `android_library` which will depend on it (with the `exported_deps` arg): you can think of this as a special rule. This can be a little confusing so keep this in mind. 
+
+One thing to note about `exported deps` is that it can slow down your build and you only want to use it when you inherit from a class or return/throw something in another jar in your code.
+
+Here is the long way to write out the `prebuilt_jar` rule.
 
 ```python
 prebuilt_jar(
@@ -212,7 +215,7 @@ for jarfile in glob(['libs/*.jar']):
   )
 ```
 
-And what this has done so far is grab all the .jar files in our libs folder and generated a name for it. It then adds the name to the JAR_DEPS array. Then it actually runs the rule `prebuilt_jar`. This JAR_DEPS array is a list of `build targets` that we will use as a dependency later. Basically telling Buck that we require these files to be compiled first.
+And what this has done so far is grab all the .jar files in our libs folder and generated a name for it. It then adds the name to the JAR_DEPS array. Then it creates the `prebuilt_jar`. This JAR_DEPS array is a list of `build targets` that we will use as a dependency later. Basically telling Buck that we require these files to be compiled first.
 
 To check that everything is going good, I would run `buck build pumpup` every time I added or changed something. You should do the same as you setup your project!
 
@@ -424,19 +427,19 @@ LIBRARIES = [
 ]
 ```
 
-There is 1 more trick for this one. It actually has a `.so` library so I needed to add it using the [prebuilt_native_library](https://buckbuild.com/rule/prebuilt_native_library.html) rule (man Buck takes care of everything!). So to the `BuckConstants` I added:
+There is 1 more trick for this one. It actually has a `.so` library so I needed to add it using the [prebuilt_cxx_library](https://buckbuild.com/rule/prebuilt_cxx_library.html) rule (man Buck takes care of everything!). So to the `BuckConstants` I added:
 
 ```python
-PREBUILT_NATIVE_LIBARY_PARAMS = {'name':'native_libs', 'native_libs':'xwalk_core_library/src/main/jniLibs'}
+PREBUILT_CXX_LIBARY_PARAMS = {'name' : 'cxx_libs', 'lib_dir' : 'xwalk_core_library/src/main/jniLibs'}
 ```
 
 and to the `BUCK` file I added:
 
 ```python
-prebuilt_native_library(**PREBUILT_NATIVE_LIBARY_PARAMS)
+prebuilt_cxx_library(**PREBUILT_CXX_LIBARY_PARAMS)
 ```
 
-Last but not least I do the Facebook plugin. It was special because it requires a buildconfig file so I added that rule as well. To add this plugin I add this to `PREBUILT_JARS`
+Last but not least I do the Facebook plugin. It was special because it requires the [android_build_config](https://buckbuild.com/rule/android_build_config.html) rule so I added that rule as well. To add this plugin I add this to `PREBUILT_JARS`
 
 ```python
   {'name' : 'android-support-v4', 'binary_jar' : 'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/android-support-v4.jar'},
@@ -761,7 +764,7 @@ LIBRARIES = [
 
 # This is required for CrossWalk .so Library
 
-PREBUILT_NATIVE_LIBARY_PARAMS = {'name' : 'native_libs', 'native_libs' : 'xwalk_core_library/src/main/jniLibs'}
+PREBUILT_CXX_LIBARY_PARAMS = {'name' : 'cxx_libs', 'lib_dir' : 'xwalk_core_library/src/main/jniLibs'}
 
 # Dependency rules for the main application library.
 
@@ -858,7 +861,7 @@ android_library(**ALL_LIBS_PARAMS)
 
 # Special rule for the .so library in CrossWalk.
 
-prebuilt_native_library(**PREBUILT_NATIVE_LIBARY_PARAMS)
+prebuilt_cxx_library(**PREBUILT_CXX_LIBARY_PARAMS)
 
 # Sets keystore config which is required for builds.
 
@@ -947,9 +950,9 @@ https://crosswalk-project.org/jira/browse/XWALK-3615
 
 Adding the rule
 ```python
-prebuilt_native_library(
-  name = 'native_libs',
-  native_libs = 'xwalk_core_library/src/main/jniLibs',
+prebuilt_cxx_library(
+  name = 'cxx_libs',
+  lib_dir = 'xwalk_core_library/src/main/jniLibs',
 )
 ```
 fixes it.
