@@ -427,19 +427,19 @@ LIBRARIES = [
 ]
 ```
 
-There is 1 more trick for this one. It actually has a `.so` library so I needed to add it using the [prebuilt_cxx_library](https://buckbuild.com/rule/prebuilt_cxx_library.html) rule (man Buck takes care of everything!). So to the `BuckConstants` I added:
+There is 1 more trick for this one. It actually has a `.so` library so I needed to add it using the [prebuilt_native_library](https://buckbuild.com/rule/prebuilt_native_library.html) rule (man Buck takes care of everything!). So to the `BuckConstants` I added:
 
 ```python
-PREBUILT_CXX_LIBARY_PARAMS = {'name' : 'cxx_libs', 'lib_dir' : 'xwalk_core_library/src/main/jniLibs'}
+PREBUILT_NATIVE_LIBARY_PARAMS = {'name':'native_libs', 'native_libs':'xwalk_core_library/src/main/jniLibs'}
 ```
 
 and to the `BUCK` file I added:
 
 ```python
-prebuilt_cxx_library(**PREBUILT_CXX_LIBARY_PARAMS)
+prebuilt_native_library(**PREBUILT_NATIVE_LIBARY_PARAMS)
 ```
 
-Last but not least I do the Facebook plugin. It was special because it requires the [android_build_config](https://buckbuild.com/rule/android_build_config.html) rule so I added that rule as well. To add this plugin I add this to `PREBUILT_JARS`
+Last but not least I do the Facebook plugin. It was special because it requires the [android_build_config]() rule so I added that rule as well. To add this plugin I add this to `PREBUILT_JARS`
 
 ```python
   {'name' : 'android-support-v4', 'binary_jar' : 'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/android-support-v4.jar'},
@@ -764,7 +764,7 @@ LIBRARIES = [
 
 # This is required for CrossWalk .so Library
 
-PREBUILT_CXX_LIBARY_PARAMS = {'name' : 'cxx_libs', 'lib_dir' : 'xwalk_core_library/src/main/jniLibs'}
+PREBUILT_NATIVE_LIBARY_PARAMS = {'name' : 'native_libs', 'native_libs' : 'xwalk_core_library/src/main/jniLibs'}
 
 # Dependency rules for the main application library.
 
@@ -861,7 +861,7 @@ android_library(**ALL_LIBS_PARAMS)
 
 # Special rule for the .so library in CrossWalk.
 
-prebuilt_cxx_library(**PREBUILT_CXX_LIBARY_PARAMS)
+prebuilt_native_library(**PREBUILT_NATIVE_LIBARY_PARAMS)
 
 # Sets keystore config which is required for builds.
 
@@ -950,9 +950,9 @@ https://crosswalk-project.org/jira/browse/XWALK-3615
 
 Adding the rule
 ```python
-prebuilt_cxx_library(
-  name = 'cxx_libs',
-  lib_dir = 'xwalk_core_library/src/main/jniLibs',
+prebuilt_native_library(
+  name = 'native_libs',
+  native_libs = 'xwalk_core_library/src/main/jniLibs',
 )
 ```
 fixes it.
