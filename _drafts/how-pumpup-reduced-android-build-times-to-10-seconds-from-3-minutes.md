@@ -504,7 +504,13 @@ In your `build.gradle` file for your project you probably have something like th
 
 <img center src='/media/deps.png' />
 
-Well the ones like `compile 'com.android.support:support-v4:22.0.0'` end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state). We don't want them exploded. We want the .jar (or .aar) files. We want the raw goods!
+Well the ones like `compile 'com.android.support:support-v4:22.0.0'` end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state). 
+
+### The Quick Way
+
+You can build the the library projects using the exploded aar folder and treat it just like an external library. However I will go over the long way below.
+
+### The Long Way
 
 This is where we need to do some digging. 
 
