@@ -1013,34 +1013,21 @@ pre > code,
 
 blockquote {
   margin: 1em 0;
-  padding: 0.75em 1em 0.75em 40px;
-  border: 2px solid #f8f8f8;
-  position: relative;
-  border-radius: 4px;
+  border-left: 4px solid #ddd;
+  padding: 3px 0 3px 12px;
+  background: #fcfcfc;
 }
-blockquote:before {
-  content: "\201C";
-  position: absolute;
-  left: 10px;
-  top: 0;
-  font-size: 3em;
-  font-weight: 600;
-  color: #ddd;
-  line-height: 1.25;
-  pointer-events: none;
-}
-
-blockquote p {
-  margin-bottom: .5em;
-  font-style: italic;
-}
-blockquote footer {
-  font-size: .75em;
-  color: #999;
-}
-blockquote cite {
-  border-bottom: 1px dotted #d2d2d2;
-}
+  blockquote p {
+    margin-bottom: .5em;
+    font-style: italic;
+  }
+  blockquote footer {
+    font-size: .75em;
+    color: #999;
+  }
+  blockquote cite {
+    border-bottom: 1px dotted #d2d2d2;
+  }
 
 /**
  * Tweetquotes
