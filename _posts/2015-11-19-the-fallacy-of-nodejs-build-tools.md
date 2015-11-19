@@ -50,6 +50,8 @@ It makes sense for us because it makes our "relatively" complex build process ea
 
 ### A "relatively" complex setup
 
+<img center src='/media/complex-setup.gif' />
+
 Our app is a hybrid; part web, part native. As a result, we have a pretty complex stack of technologies used in concert of each other, enabling us to do the things we do. For the sake of simplicity, I'm just going to focus on the "web" side of things.
 
 Here's the bare minimum of what our current setup requires:
