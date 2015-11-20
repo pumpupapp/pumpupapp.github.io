@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# install xcode-select
+xcode-select --install
+echo "NOTE: If xcode select needs to be downloaded, rerun this script once complete"
+
 # install ruby
 command ruby -v >/dev/null 2>&1 && echo "Ruby installed" || {
   echo "Ruby not found... installing now"
