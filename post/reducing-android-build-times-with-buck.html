@@ -959,28 +959,24 @@ public class AppShell extends ExopackageApplication
 <p><strong>BUILD FAILED: When the &#39;res&rsquo; is specified for android_resource() //:appcompat-v7-22.0.0-res, at least one of &#39;package&rsquo; or &#39;manifest&rsquo; must be specified.</strong><br>
 Needs the build rule package. Get it from the AndroidManifest.xml. (Note manifest is not a supported argument on the site at least? Documentation issue?)</p>
 
-<p><em>**res/values/theme.xml:3: error: Error retrieving parent for item: No resource found that matches the given name &#39;Theme.AppCompat.Light.NoActionBar&rsquo;.</em>* Getting the external lib in (app compat v7) fixed this.</p>
+<p><strong>res/values/theme.xml:3: error: Error retrieving parent for item: No resource found that matches the given name &#39;Theme.AppCompat.Light.NoActionBar&rsquo;.</strong> Getting the external lib in (app compat v7) fixed this.</p>
 
 <p><strong><em>ExternalLibs/appcompat-v7-22.0.0/res/values-v23/styles_base.xml:20: error: Error retrieving parent for item: No resource found that matches the given name &#39;android:Widget.Material.Button.Colored&rsquo;.</em></strong><br>
 This one was an issue.</p>
 
 <p><a href="http://stackoverflow.com/questions/32075498/error-retrieving-parent-for-item-no-resource-found-that-matches-the-given-name">http://stackoverflow.com/questions/32075498/error-retrieving-parent-for-item-no-resource-found-that-matches-the-given-name</a></p>
 
-<p>Bad News: Setting<br>
-<code>python<br>
-[android]<br>
-    target = Google Inc.:Google APIs:23<br>
-</code></p>
-
+<p>Bad News: Setting</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="p">[</span><span class="n">android</span><span class="p">]</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">Google</span> <span class="n">Inc</span><span class="o">.</span><span class="p">:</span><span class="n">Google</span> <span class="n">APIs</span><span class="p">:</span><span class="mi">23</span>
+</code></pre></div>
 <p>In the .buckconfig does fix this error. But I didnt WANT to compile against that. I&rsquo;ve left it for now but it needs to be changed to 22.</p>
 
 <p><strong><em>BUILD FAILED: Secondary dex exceeds linear alloc limit.</em></strong><br>
-<a href="https://github.com/facebook/buck/issues/385">https://github.com/facebook/buck/issues/385</a> adding this to the <code>android_binary</code> fixes it.<br>
-<code><br>
-use_linear_alloc_split_dex = true<br>
-linear_alloc_hard_limit = 16 * 1024 * 1024,<br>
-</code></p>
-
+<a href="https://github.com/facebook/buck/issues/385">https://github.com/facebook/buck/issues/385</a> adding this to the <code>android_binary</code> fixes it.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">use_linear_alloc_split_dex</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">linear_alloc_hard_limit</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>
+</code></pre></div>
 <p><strong><em>There was an error in smart dexing step<br>
 com.facebook.buck.step.StepFailedException: Failed on step dx<em>&amp;&amp;</em>write<em>file with an exception:<br>
 Multiple dex files define Lco/pumpup/app/AppShell;<br>
@@ -996,14 +992,13 @@ In the off chance you have CrossWalk I got a really nasty error that made no sen
 
 <p><a href="https://crosswalk-project.org/jira/browse/XWALK-3615">https://crosswalk-project.org/jira/browse/XWALK-3615</a></p>
 
-<p>Adding the rule<br>
-<code>python<br>
-prebuilt_native_library(<br>
-  name = &#39;native_libs&#39;,<br>
-  native_libs = &#39;xwalk_core_library/src/main/jniLibs&#39;,<br>
-)<br>
-</code><br>
-fixes it.</p>
+<p>Adding the rule</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">prebuilt_native_library</span><span class="p">(</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'native_libs'</span><span class="p">,</span>
+  <span class="n">native_libs</span> <span class="o">=</span> <span class="s">'xwalk_core_library/src/main/jniLibs'</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>fixes it.</p>
 
 
       
