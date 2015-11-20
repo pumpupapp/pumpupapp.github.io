@@ -951,7 +951,7 @@ This was a bug that was patched out. Make sure your buck is using the latest ver
 **BUILD FAILED: When the 'res' is specified for android_resource() //:appcompat-v7-22.0.0-res, at least one of 'package' or 'manifest' must be specified.**
 Needs the build rule package. Get it from the AndroidManifest.xml. (Note manifest is not a supported argument on the site at least? Documentation issue?)
 
-***res/values/theme.xml:3: error: Error retrieving parent for item: No resource found that matches the given name 'Theme.AppCompat.Light.NoActionBar'.** Getting the external lib in (app compat v7) fixed this.
+**res/values/theme.xml:3: error: Error retrieving parent for item: No resource found that matches the given name 'Theme.AppCompat.Light.NoActionBar'.** Getting the external lib in (app compat v7) fixed this.
 
 ***ExternalLibs/appcompat-v7-22.0.0/res/values-v23/styles_base.xml:20: error: Error retrieving parent for item: No resource found that matches the given name 'android:Widget.Material.Button.Colored'.***
 This one was an issue.
@@ -959,6 +959,7 @@ This one was an issue.
 http://stackoverflow.com/questions/32075498/error-retrieving-parent-for-item-no-resource-found-that-matches-the-given-name
 
 Bad News: Setting
+
 ```python
 [android]
     target = Google Inc.:Google APIs:23
@@ -968,7 +969,8 @@ In the .buckconfig does fix this error. But I didnt WANT to compile against that
 
 ***BUILD FAILED: Secondary dex exceeds linear alloc limit.***
 https://github.com/facebook/buck/issues/385 adding this to the `android_binary` fixes it.
-```
+
+```python
 use_linear_alloc_split_dex = true
 linear_alloc_hard_limit = 16 * 1024 * 1024,
 ```
@@ -989,11 +991,13 @@ In the off chance you have CrossWalk I got a really nasty error that made no sen
 https://crosswalk-project.org/jira/browse/XWALK-3615
 
 Adding the rule
+
 ```python
 prebuilt_native_library(
   name = 'native_libs',
   native_libs = 'xwalk_core_library/src/main/jniLibs',
 )
 ```
+
 fixes it.
 
