@@ -2,6 +2,7 @@
 layout: post
 title: How PumpUp Setup Buck For Android Reducing Compile Time From 3 Minutes To 10 Seconds
 author: AnthonyUccello
+meta: Beginners guide to setting up Buck for Android Studio
 ---
 
 1. [Intro](#intro)
