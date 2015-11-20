@@ -27,7 +27,7 @@ function clone() {
 
   debug('cloning %o into %o', repo, dest)
 
-  var clone = exec(`git clone -b gh-pages ${repo} ${dest}`)
+  var clone = exec(`git clone -b master ${repo} ${dest}`)
 
   if (clone.code !== 0) {
     debug('unable to clone %o into %o', repo, dest)
