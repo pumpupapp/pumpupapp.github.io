@@ -1,8 +1,8 @@
 ---
 layout: post
-title: How PumpUp Setup Buck For Android Reducing Compile Time From 3 Minutes To 10 Seconds
+title: Reducing Android Build Times with Buck
 author: AnthonyUccello
-meta: Beginners guide to setting up Buck for Android Studio
+meta: How PumpUp setup Buck for Android; reducing compile times from 3 minutes to 10 seconds.
 ---
 
 1. [Intro](#intro)
@@ -19,13 +19,13 @@ meta: Beginners guide to setting up Buck for Android Studio
 
 #### Preface
 
-This post will demonstrate how I set up Buck & Exopackage for PumpUp. It will also troubleshoot the errors that came up. Setting up Buck brought our build times down from 3 minutes to 10 seconds. [Click here](#completed-buck-files) if you want to look at the completed build scripts. Note: Because most of our codebase is JavaScript, I used just one `BUCK` file and some convenience dependencies in a `BuckConstants` file. For the absolute best results, you should use multiple `BUCK` files and declare dependencies independently. Extra special thanks to [Shawn Wilsher](https://github.com/sdwilsh) for all the Buck help! 
+This post will demonstrate how I set up Buck & Exopackage for PumpUp. It will also troubleshoot the errors that came up. Setting up Buck brought our build times down from 3 minutes to 10 seconds. [Click here](#completed-buck-files) if you want to look at the completed build scripts. Note: Because most of our codebase is JavaScript, I used just one `BUCK` file and some convenience dependencies in a `BuckConstants` file. For the absolute best results, you should use multiple `BUCK` files and declare dependencies independently. Extra special thanks to [Shawn Wilsher](https://github.com/sdwilsh) for all the Buck help!
 
 <img center src='/media/frymeme.jpg' />
 
-Setting up Buck can be a little intimidating if you don't know Regex or Python. Stick with it— it's well worth the time you will save! This post will assume that you have absolutely no knowledge Python or Regex.  I'll explain every step I took to getting Buck working. 
+Setting up Buck can be a little intimidating if you don't know Regex or Python. Stick with it— it's well worth the time you will save! This post will assume that you have absolutely no knowledge Python or Regex.  I'll explain every step I took to getting Buck working.
 
-Say you save 2 minutes off of your build time and you have 10 engineers who compile 20 times a day for 1 year. You would save 100 days of time! I think we can agree that this is a no brainer! 
+Say you save 2 minutes off of your build time and you have 10 engineers who compile 20 times a day for 1 year. You would save 100 days of time! I think we can agree that this is a no brainer!
 
 ##### And last but not least...
 
@@ -123,7 +123,7 @@ So I added the `BuckConstants` file in the same directory. For now, it's blank.
 
 Next, I imported it into the BUCK file using [include_defs](https://buckbuild.com/function/include_defs.html).
 
-To fetch all the `.jar` and `.java` files, a little regex is used. `import re` needs to be added to the `BUCK` file. 
+To fetch all the `.jar` and `.java` files, a little regex is used. `import re` needs to be added to the `BUCK` file.
 
 Right now, the `BUCK` file looks like this:
 
@@ -149,13 +149,13 @@ We should be clear about the term library. The [android_library](https://buckbui
 5. AppShell (this is for Exopackage)
 6. The `src`, `res` and `assets` folders (you know all the code you wrote and the resources you used)
 
-All of my .java files will be converted to a library, and the `res` and `assets` folder will be created with an [android_resource](https://buckbuild.com/rule/android_resource.html) rule (just like I did for the external libraries and library projects). As a reminder, the `android_library` rule will depend on the `android_resouce` rule. Which makes sense, as we need our resources and assets along with the `.java` code to run! The `android_resource rule` covers the `res, `assets`, and the `package name`. 
+All of my .java files will be converted to a library, and the `res` and `assets` folder will be created with an [android_resource](https://buckbuild.com/rule/android_resource.html) rule (just like I did for the external libraries and library projects). As a reminder, the `android_library` rule will depend on the `android_resouce` rule. Which makes sense, as we need our resources and assets along with the `.java` code to run! The `android_resource rule` covers the `res, `assets`, and the `package name`.
 
 The important take away with Buck is that you are turning your `.java` code & resources & assets into a library using the `android_library rule` & `android_resource` rule. All of this will eventually be compiled into the [android_binary](https://buckbuild.com/rule/android_binary.html). Before I cover `.java`, I will go over `.jars` because those will need to be compiled first.
 
 #### Coding Library Rules For .jars
 
-You might be thinking that it's time to use `android_library` for `.jars`, since `.jars` are libraries — aren’t they!? Correct...but you will often need to use `android_library` and `android_resouce` together, because a library will usually have src/res/asset files. If a library is a `.jar` file, you first use `prebuilt_jar` and then `android_library` which will depend on it (with the `exported_deps` arg): you can think of this as a special rule. It can be a little confusing, so keep this in mind. 
+You might be thinking that it's time to use `android_library` for `.jars`, since `.jars` are libraries — aren’t they!? Correct...but you will often need to use `android_library` and `android_resouce` together, because a library will usually have src/res/asset files. If a library is a `.jar` file, you first use `prebuilt_jar` and then `android_library` which will depend on it (with the `exported_deps` arg): you can think of this as a special rule. It can be a little confusing, so keep this in mind.
 
 One thing to note about `exported deps` is that it can slow down your build and you only want to use it when you inherit from a class or return/throw something in another jar in your code.
 
@@ -256,7 +256,7 @@ Library Projects can have their own src, libraries, assets, and res folders. As 
 
 This is the Library Project xwalk_core_library. Notice how it has a `libs` folder with `.jar` files of its own. It also has an `src` folder (which could have `.java` code, but in this case it does not). It also has a special `.so` (shared object, c++, Library, I will come back to that later). It also has its own `AndroidManifest.xml`, which is where I will get the package name from. It also has things we are going to completely ignore: `build.gradle`, `xwalk_core_library.iml`, and the `build` folder.
 
-Let's start with what we already know. Those two jar files look awfully familiar. Oh right, they're just like the `.jars` we have in our libs folder. I need to add the build rules for these. I also need to make sure the `android_library` rule for this will depend on the `android_resource` rule. 
+Let's start with what we already know. Those two jar files look awfully familiar. Oh right, they're just like the `.jars` we have in our libs folder. I need to add the build rules for these. I also need to make sure the `android_library` rule for this will depend on the `android_resource` rule.
 
 This is why I choose to use a parse object (i.e. dictionary) that will contain all of the data needed to call the `prebuilt_jar`, `android_resource`, and `android_library` rules in a loop, each depending on the previous one. This way, I have one place to put ALL .jar files (technically, we could add the .jar files from our libs folder this way). Depending on your project, you might be better off explicitly declaring dependencies and having your own build order. I didn't notice any slow down, so I was happy to do it this way (if you find that your builds are slower, consider splitting your code into mulitple buck files and ditching the convienience dependencies).
 
@@ -270,7 +270,7 @@ PREBUILT_JARS = [
 ]
 ```
 
-`PREBUILT_JARS` is where I will add all `.jar` objects that aren't in the `libs` folder. This covers the library projects and external libraries which are going to have jars. 
+`PREBUILT_JARS` is where I will add all `.jar` objects that aren't in the `libs` folder. This covers the library projects and external libraries which are going to have jars.
 
 As you can see, I created a dictionary that has the name and path for the two jar files. This will be passed later to the `prebuilt_jar` rule in a loop that builds all of these and combines them from the ones I built from the `libs` folder to make one convienient android_library named "all-jars". This will make it easy for the `android_resource` rule to depend on this, and later the final application `android_library` to depend on it as well. I will do the same thing with the `android_resource` rules and the `android_library rules.
 
@@ -353,7 +353,7 @@ ALL_JARS_PARAMS = {'name':'all-jars', 'exported_deps':JAR_DEPS}
 ```
 
 This will now let me change this rule in the `BUCK` file
- 
+
 ```python
 android_library(
   name = 'all-jars',
@@ -430,7 +430,7 @@ Notice how this library file depends on the `xwalk-lib-res` AND `all-jars`? That
 
 <img center src='/media/cordovalib.png' />
 
-This is the CordovaLib Library Project. This one does have `.java `files under the `src` folder, but it doesn't have any libraries (`.jars`) of its own. 
+This is the CordovaLib Library Project. This one does have `.java `files under the `src` folder, but it doesn't have any libraries (`.jars`) of its own.
 
 We will ignore the `test` and `build` folders, and all the `.xml` and `gradle` files. We only care about the `assets`, `res`, `src` folders.
 
@@ -505,7 +505,7 @@ In your `build.gradle` file for your project, you probably have something like t
 
 <img center src='/media/deps.png' />
 
-The ones like `compile 'com.android.support:support-v4:22.0.0'` end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state). 
+The ones like `compile 'com.android.support:support-v4:22.0.0'` end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state).
 
 ### The Quick Way
 
@@ -513,7 +513,7 @@ You can build the library projects using the exploded aar folder and treat it ju
 
 ### The Long Way
 
-This is where we need to do some digging. 
+This is where we need to do some digging.
 
 If you look on the Google Docs for [support libraries](http://developer.android.com/intl/es/tools/support-library/features.html) you will see that it tells you where it keeps the files locally (which aren't in the project root I need).
 
@@ -603,9 +603,9 @@ Up until now, I've been doing everything in the project except the root project 
 
 Determining what you need to build can be a little confusing so I am going to gernally outline the process, though it's easier to pick out the files you need (a lot of folders and files are for the IDE and gradle). Because I have all the libraries handled, all I need are the `src`, `res`, `assets` and `AndroidManifest` files to make the binary. But because I am using Exopackage, I need to do an update.
 
-It's explained [pretty well here](https://buckbuild.com/article/exopackage.html#use-exopackage). 
+It's explained [pretty well here](https://buckbuild.com/article/exopackage.html#use-exopackage).
 
-I built the [buck-support-jar](https://buckbuild.com/article/exopackage.html#build-buck-support-library) and put it in the `libs` folder (which means it's handled already because of the regex loop I wrote at the beginning that gets `.jars` in the `libs1 folder) 
+I built the [buck-support-jar](https://buckbuild.com/article/exopackage.html#build-buck-support-library) and put it in the `libs` folder (which means it's handled already because of the regex loop I wrote at the beginning that gets `.jars` in the `libs1 folder)
 
 I created an AppShell.java file:
 
@@ -833,7 +833,7 @@ ANDROID_MAIN_LIBRARY_PARAMS = {
   ]
 }
 
-# The final .apk step. The linear_alloc_hard needs to be set because our dex files are larger than 4mb. 
+# The final .apk step. The linear_alloc_hard needs to be set because our dex files are larger than 4mb.
 # use_linear_alloc_split_dex & use_split_dex must be set to true.
 
 ANDROID_BINARY_PARAMS = {
@@ -844,7 +844,7 @@ ANDROID_BINARY_PARAMS = {
   'keystore' : ':debug_keystore',
   'use_split_dex' : True,
   'exopackage_modes' : ['secondary_dex'],
-  'primary_dex_patterns' : [ 
+  'primary_dex_patterns' : [
     '^co/pumpup/app/AppShell^',
     '^co/pumpup/app/BuildConfig^',
     '^com/facebook/buck/android/support/exopackage/',
@@ -859,7 +859,7 @@ ANDROID_BINARY_PARAMS = {
 And here is the final `Buck` file.
 
 ```python
-# These are the build rules which use arguments from BuckConstants to build all the files for the .apk. 
+# These are the build rules which use arguments from BuckConstants to build all the files for the .apk.
 # This speeds up Android Studio build times to about 10 seconds from 3 minutes.
 
 import re
@@ -895,7 +895,7 @@ for library in LIBRARIES:
   android_library(name = library['name'],deps = library['deps'],srcs = library['srcs'])
   LIB_DEPS.append(':' + library['name'])
 
-# Combines all libraries into one dependency (except the main library). 
+# Combines all libraries into one dependency (except the main library).
 
 android_library(**ALL_LIBS_PARAMS)
 
@@ -958,7 +958,7 @@ This one was an issue.
 
 http://stackoverflow.com/questions/32075498/error-retrieving-parent-for-item-no-resource-found-that-matches-the-given-name
 
-Bad News: Setting 
+Bad News: Setting
 ```python
 [android]
     target = Google Inc.:Google APIs:23
