@@ -1,0 +1,1058 @@
+<!doctype html>
+
+<html lang="en">
+
+
+  <meta charset="utf-8">
+
+  <meta name="author" content="PumpUp - http://pumpup.com/">
+  <meta name="copyright" content="&copy; PumpUp">
+  
+    <meta name="description" content="How PumpUp setup Buck for Android; reducing compile times from 3 minutes to 10 seconds.">
+  
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@pumpup">
+  <meta name="twitter:domain" content="pumpup.com">
+  <meta name="twitter:creator" content="@pumpup">
+  
+    
+      <meta name="twitter:title" content="Reducing Android Build Times with Buck / PumpUp">
+    
+  
+  
+    <meta name="twitter:description" content="How PumpUp setup Buck for Android; reducing compile times from 3 minutes to 10 seconds.">
+  
+
+  <meta name="viewport" content="width=device-width">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+
+  <meta http-equiv="cleartype" content="on">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+  
+    
+      <title>Reducing Android Build Times with Buck / PumpUp</title>
+    
+  
+
+
+  <link rel="shortcut icon" href="/favicon.png">
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,600italic,800italic,300,600,800">
+  <link rel="stylesheet" href="/css/main.css">
+
+
+  
+
+    <div class="menu">
+      <nav class="menu__nav" id="menu">
+        <div class="content content--flat-bottom">
+          <a class="menu__button-close" href="#"></a>
+          <div class="content__box">
+            <h4 class="title--flat emphasize">Menu</h4>
+          </div>
+        </div>
+        <div class="content content-freeform content--pad-bottom">
+          <ul class="list--plain list--flat">
+            <li class="list__item">
+              <a class="link--block" href="/">
+                <div class="content">
+                  <div class="content__box content__box--pad-half">Home</div>
+                </div>
+              </a>
+            </li>
+            <li class="list__item">
+              <a class="link--block" href="http://pumpup.com">
+                <div class="content">
+                  <div class="content__box content__box--pad-half">PumpUp.com</div>
+                </div>
+              </a>
+            </li>
+            <li class="list__item">
+              <a class="link--block" href="https://github.com/pumpupapp?tab=repositories">
+                <div class="content">
+                  <div class="content__box content__box--pad-half">Projects</div>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <aside class="menu__toggler alignright">
+        <a class="menu__opener button-menu button-menu--inverse" href="#menu"></a>
+        <a class="menu__closer button-menu button-menu--inverse" href="#"></a>
+      </aside>
+    </div> <!-- .menu -->
+
+  
+
+
+  <header class="header header--colored">
+    <div class="content">
+      <div class="content__box content__box--pad-one">
+        
+          <h1 class="header__wrapper title--base-size title--thin title--flat">
+            <a class="header__link header__link--dimmed title--dimmed" href="#menu">
+              
+                PumpUp <b>dev</b>
+              
+            </a>
+          </h1>
+        
+        
+          <div class="header__title aligncenter">
+            
+              <p class="content__subtitle content__subtitle--dashed title--dimmed">November 19, 2015</p>
+            
+            
+              <h1 class="title title--thin title--flat">Reducing Android Build Times with Buck</h1>
+            
+            
+            
+            <p class="content__subtitle title--dimmed">
+              <i>
+                by <a class="header__link header__link--dimmed title--dimmed" href="http://github.com/AnthonyUccello"><b>@AnthonyUccello</b></a>
+              </i>
+            </p>
+          </div>
+        
+      </div>
+    </div>
+  </header> <!-- .header -->
+
+
+  <article class="content content--post">
+  <div class="content__box content__body">
+
+    
+
+      <ol>
+<li><a href="#intro">Intro</a></li>
+<li><a href="#setup">Setup</a></li>
+<li><a href="#library-build-rules">Library Build Rules</a></li>
+<li><a href="#coding-library-rules-for-library-projects">Coding Library Rules For Library Projects</a></li>
+<li><a href="#external-libraries">External Libraries</a></li>
+<li><a href="#exopackage">Exopackage</a></li>
+<li><a href="#binary-rules">Binary Rules</a></li>
+<li><a href="#completed-buck-files">Completed Buck Files</a></li>
+<li><a href="#errors">Errors</a></li>
+</ol>
+
+<h3 id="intro">Intro</h3>
+
+<h4 id="preface">Preface</h4>
+
+<p>This post will demonstrate how I set up Buck &amp; Exopackage for PumpUp. It will also troubleshoot the errors that came up. Setting up Buck brought our build times down from 3 minutes to 10 seconds. <a href="#completed-buck-files">Click here</a> if you want to look at the completed build scripts. Note: Because most of our codebase is JavaScript, I used just one <code>BUCK</code> file and some convenience dependencies in a <code>BuckConstants</code> file. For the absolute best results, you should use multiple <code>BUCK</code> files and declare dependencies independently. Extra special thanks to <a href="https://github.com/sdwilsh">Shawn Wilsher</a> for all the Buck help!</p>
+
+<p><img center src='/media/frymeme.jpg' /></p>
+
+<p>Setting up Buck can be a little intimidating if you don&rsquo;t know Regex or Python. Stick with it— it&rsquo;s well worth the time you will save! This post will assume that you have absolutely no knowledge Python or Regex.  I&rsquo;ll explain every step I took to getting Buck working.</p>
+
+<p>Say you save 2 minutes off of your build time and you have 10 engineers who compile 20 times a day for 1 year. You would save 100 days of time! I think we can agree that this is a no brainer!</p>
+
+<h5 id="and-last-but-not-least">And last but not least&hellip;</h5>
+
+<p><img center src='/media/youmean.jpeg' /></p>
+
+<p>If you&rsquo;ve spent some time coding on Android, you may have encountered the nasty <a href="http://developer.android.com/intl/es/tools/building/multidex.html">65536 code limit</a>. Adding the Google Play Services library will likely shove you right over that limit. Buck is multi-dexed, so you will never have to worry about this issue.</p>
+
+<p>At the end of this post, I listed a bunch of errors that I ran into. Some of these errors — especially the last few  — are pretty specific to this project (for instance, the missing .so library issue I had with CrossWalk). You may find this resource quite helpful, just in case you encounter any problems.</p>
+
+<p>PumpUp uses Cordova, CrossWalk, and a number of other libraries.</p>
+
+<p>For official documentation and tutorials visit the <a href="https://buckbuild.com/">Buck page</a>.</p>
+
+<p>This post will assume starting point from the Buck setup using their <a href="https://buckbuild.com/setup/quick_start.html">quick start guide</a> and that you know how to add the <a href="https://buckbuild.com/rule/keystore.html">keystore</a> rule (I won&rsquo;t be mentioning this later). You should know how to use terminal and it is assumed that you understand that all Buck commands are being run from my local Android project directory, and Buck has already been <a href="https://buckbuild.com/setup/install.html">added to my path</a>.</p>
+
+<p>Here is the project structure I am converting over to build with Buck:</p>
+
+<p><img center src='/media/proj.png' /></p>
+
+<h3 id="buck-basics">Buck Basics</h3>
+
+<h4 id="what-is-buck">What Is Buck?</h4>
+
+<p>Buck is a tool that allows you to build your Android project with greater speed. It saves time by building resources in parallel and by caching things that are already built and don&rsquo;t need to be rebuilt.</p>
+
+<h4 id="what-is-exopackage">What Is Exopackage?</h4>
+
+<p>Exopackage makes incremental builds up to 5X faster. Exopackage speeds up your builds, but it requires a little extra set up involving an AppShell. Basically, it’s Buck on crack.</p>
+
+<h4 id="what-is-buckd-watchman">What is buckd/Watchman?</h4>
+
+<p>buckd uses Watchman to speed up your builds. The time spent parsing BUCK files will go away and JVM cache will be warm so recompiles will be faster. If you use hg, Facebook has made it much faster with Watchman integration.</p>
+
+<p><a href="https://facebook.github.io/watchman/docs/install.html">Get it here</a></p>
+
+<p>Super easy. buckd is basically Exopackage on crack.</p>
+
+<h4 id="build-file-v-s-build-rule-v-s-build-target">Build File v.s. Build Rule v.s. Build Target</h4>
+
+<p>A <a href="https://buckbuild.com/concept/build_file.html">build file</a> is a BUCK file. It has ownership of all files in its directory and subdirectories, unless any of those sub-directories has a BUCK file. If that&rsquo;s the case, it has ownership of that directory and subdirectories.</p>
+
+<p>A <a href="https://buckbuild.com/concept/build_rule.html">build rule</a> is a rule that will generate 0 or 1 file. You will put your build rules inside BUCK files. You will need specialized build rules for each of the output files you make. The most common ones are <a href="https://buckbuild.com/rule/android_library.html">android_library</a> and <a href="https://buckbuild.com/rule/android_resource.html">android_resource</a>.</p>
+
+<p>A <a href="https://buckbuild.com/concept/build_target.html">build target</a> is the addressable target of a build rule. When you make a build rule, it ALWAYS has a name. This name is used when other rules need to depend on this rule. When a build rule depends on another, it uses ‘:build-rule-name’ (which is the build target).</p>
+
+<p><img center src='/media/build.png' /></p>
+
+<h4 id="all-files-must-live-under-the-project-root">All Files Must Live Under The Project Root</h4>
+
+<p>With Gradle, you can have external dependencies. These are the things you added to your <code>build.gradle</code> file.</p>
+
+<p>With Buck, all necessary files need to live under the project root. This is also where the <code>.buckconfig</code> is.</p>
+
+<p>This means I will need to get the external files to reside locally in the project. But I’ll come back to this in the next section.</p>
+
+<p>For now let&rsquo;s start with the&hellip;</p>
+
+<h3 id="setup">Setup</h3>
+
+<h4 id="buck-setup">Buck Setup</h4>
+
+<p>The first step was putting <code>.buckconfig</code> in the project root (which you should have from the <a href="https://buckbuild.com/setup/quick_start.html">quickstart</a>). You can add more config options <a href="https://buckbuild.com/concept/buckconfig.html#project">outlined here</a>.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="p">[</span><span class="n">alias</span><span class="p">]</span>
+    <span class="n">pumpup</span> <span class="o">=</span> <span class="o">//</span><span class="p">:</span><span class="n">pumpup</span>
+<span class="p">[</span><span class="n">java</span><span class="p">]</span>
+    <span class="n">src_roots</span> <span class="o">=</span> <span class="o">/</span><span class="n">src</span>
+<span class="p">[</span><span class="n">project</span><span class="p">]</span>
+    <span class="n">default_android_manifest</span> <span class="o">=</span> <span class="n">AndroidManifest</span><span class="o">.</span><span class="n">xml</span>
+    <span class="n">ignore</span> <span class="o">=</span> <span class="o">.</span><span class="n">git</span>
+    <span class="n">temp_files</span> <span class="o">=</span> <span class="o">^</span><span class="c">#.*#$, .*~$, .*\.swp$</span>
+<span class="p">[</span><span class="n">android</span><span class="p">]</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">Google</span> <span class="n">Inc</span><span class="o">.</span><span class="p">:</span><span class="n">Google</span> <span class="n">APIs</span><span class="p">:</span><span class="mi">23</span>
+<span class="p">[</span><span class="n">project</span><span class="p">]</span>
+  <span class="n">watchman_query_timeout_ms</span> <span class="o">=</span> <span class="mi">3000</span>
+</code></pre></div>
+<p>and updating the <code>.ignore</code> (because you use Github right?)</p>
+<div class="highlight"><pre><code class="language-" data-lang="">app/platforms/android/buck-out
+app/platforms/android/.buckd
+app/platforms/android/buck-
+app/platforms/android/buck-cache
+</code></pre></div>
+<p>The <code>[alias]</code> tag will let me build the <code>.apk</code> with a simple <code>buck build pumpup</code> call in the terminal. This will make Buck start the <code>pumpup</code> rule which is (as I mentioned before) the name of my <a href="https://buckbuild.com/rule/android_binary.html">android_binary</a> rule. Because the <code>android_binary</code> rule will depend on all the other rules, Buck then goes and runs through all the build rules in the file. But I&rsquo;m getting WAY ahead of the curve. Let&rsquo;s step back and start with some&hellip;</p>
+
+<h5 id="python-swag">Python Swag</h5>
+
+<p>To keep the BUCK build file as small and readable as possible, I am using constants from a <code>BuckConstants</code> file. In Python, you can pass a dictionary object as a params object for a function using <code>**</code>. You can read up on what ** does <a href="http://programmers.stackexchange.com/questions/131403/what-is-the-name-of-in-Python">here</a>:</p>
+
+<p>So I added the <code>BuckConstants</code> file in the same directory. For now, it&rsquo;s blank.</p>
+
+<p>Next, I imported it into the BUCK file using <a href="https://buckbuild.com/function/include_defs.html">include_defs</a>.</p>
+
+<p>To fetch all the <code>.jar</code> and <code>.java</code> files, a little regex is used. <code>import re</code> needs to be added to the <code>BUCK</code> file.</p>
+
+<p>Right now, the <code>BUCK</code> file looks like this:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="n">include_defs</span><span class="p">(</span><span class="s">'//BuckConstants'</span><span class="p">)</span>
+</code></pre></div>
+<p>And the <code>BuckConstants</code> file is empty. That will change soon, but first&hellip;</p>
+
+<h3 id="library-build-rules">Library Build Rules</h3>
+
+<p><img center src='/media/yodawgmeme.jpg' /></p>
+
+<h4 id="the-library-term">The Library Term</h4>
+
+<p>We should be clear about the term library. The <a href="https://buckbuild.com/rule/android_library.html">android_library</a> rule will be used for the following:</p>
+
+<ol>
+<li>.jar files &amp; .aar files (prebuilt<em>jar or android</em>prebuilt_aar needs to be used first!)</li>
+<li>Library Projects</li>
+<li>.java files</li>
+<li>.aar files</li>
+<li>AppShell (this is for Exopackage)</li>
+<li>The <code>src</code>, <code>res</code> and <code>assets</code> folders (you know all the code you wrote and the resources you used)</li>
+</ol>
+
+<p>All of my .java files will be converted to a library, and the <code>res</code> and <code>assets</code> folder will be created with an <a href="https://buckbuild.com/rule/android_resource.html">android_resource</a> rule (just like I did for the external libraries and library projects). As a reminder, the <code>android_library</code> rule will depend on the <code>android_resouce</code> rule. Which makes sense, as we need our resources and assets along with the <code>.java</code> code to run! The <code>android_resource rule</code> covers the <code>res,</code>assets<code>, and the</code>package name`.</p>
+
+<p>The important take away with Buck is that you are turning your <code>.java</code> code &amp; resources &amp; assets into a library using the <code>android_library rule</code> &amp; <code>android_resource</code> rule. All of this will eventually be compiled into the <a href="https://buckbuild.com/rule/android_binary.html">android_binary</a>. Before I cover <code>.java</code>, I will go over <code>.jars</code> because those will need to be compiled first.</p>
+
+<h4 id="coding-library-rules-for-jars">Coding Library Rules For .jars</h4>
+
+<p>You might be thinking that it&rsquo;s time to use <code>android_library</code> for <code>.jars</code>, since <code>.jars</code> are libraries — aren’t they!? Correct&hellip;but you will often need to use <code>android_library</code> and <code>android_resouce</code> together, because a library will usually have src/res/asset files. If a library is a <code>.jar</code> file, you first use <code>prebuilt_jar</code> and then <code>android_library</code> which will depend on it (with the <code>exported_deps</code> arg): you can think of this as a special rule. It can be a little confusing, so keep this in mind.</p>
+
+<p>One thing to note about <code>exported deps</code> is that it can slow down your build and you only want to use it when you inherit from a class or return/throw something in another jar in your code.</p>
+
+<p>Here is the long way to write out the <code>prebuilt_jar</code> rule.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">prebuilt_jar</span><span class="p">(</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'xwalk-app-jar'</span><span class="p">,</span>
+  <span class="n">binary_jar</span> <span class="o">=</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_app_part.jar'</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>The <code>name</code> is the name of this build rule that will be referenced when other rules (like the upcoming <code>android_library</code> rule) depend on it via <code>deps = [‘:xwalk-app-jar’]</code>. The <code>binary_jar</code> is the local path to the jar file (tip: you can drag the file into terminal to get a quick path to it).</p>
+
+<p>If you have <code>.aar</code> files, you use the <code>android_aar</code> rule (I don’t have any .aar files for this project). You would do the same as above, but use the <code>android_prebuilt_aar</code> rule instead of <code>prebuilt_jar</code> followed by the <code>android_library</code> rule (with the <code>eported_deps</code> arg). <a href="http://tools.android.com/tech-docs/new-build-system/aar-format">.aar</a> files are libraries that are bundled with res, src, and assets (and more, just like a Library Project) but it&rsquo;s a nice convient zip of type .aar. It&rsquo;s like a <code>.jar</code>, but with extra stuff. The rule  <code>android_prebuilt_aar</code> has the word android_ in front because it ONLY works with <code>android_library</code>, where as <code>prebuilt_jar</code> will work with both <code>android_library</code> and <code>java_library</code> rules.</p>
+
+<p>Just a note: this is a preview of the <code>prebuilt_jar</code> rule, because I am going to compile the .jar files in the /libs folder first.  I will be using regex and a loop to do it, so I figured I&rsquo;d show you the &lsquo;normal&rsquo; way of adding any jar. Technically, you can add all your jars this way, but why hard code when you can regex?</p>
+
+<p>That&rsquo;s a really short and easy rule, but the BUCK file can get very messy very fast. This is why we are going to start with some clean coding techniques right off the bat. I found that it helps to write things in the order that they will be compiled. I prefer to structure it so that build rules lower in the script will rely on build rules above it. Again, it&rsquo;s my personal preference - but it made everything a lot easier for me.</p>
+
+<p>Buck uses Python, but even if you don’t know any Python (like me), don’t fret. You can easily tell what’s going on. The thing to keep in mind with Python is that it is a space separated language. You can put named arguments in any order!</p>
+
+<p>Rather than writing a build rule for everything, we are going to create a dictionary object, and then loop that calling prebuilt_jar on every object inside it.</p>
+
+<p>Here is the libs folder in the project:</p>
+
+<p><img center src='/media/libs.png' /></p>
+
+<p>I am going to use the <code>prebuilt_jar</code> rule for all these, but it&rsquo;s important to note that these aren’t ALL our .jar files. One of our Library Projects has .jar files, which we will deal with later in the External Libraries section.</p>
+
+<p>This brings in Regex. If you don’t know Regex, check out this <a href="https://www.youtube.com/watch?v=EkluES9Rvak">tutorial</a>. It&rsquo;s really good to know, but if you’re in a hurry, use the syntax here.</p>
+
+<p>First to the BUCK file (for now) I add:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">JAR_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div>
+<p>Next, I am going to add all the .jar files from the libs folder.</p>
+
+<p><img center src='/media/compilememe.jpeg' /></p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#### Build rules for every .jar in the /libs folder.</span>
+<span class="k">for</span> <span class="n">jarfile</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">([</span><span class="s">'libs/*.jar'</span><span class="p">]):</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'jars__'</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r'^.*/([^/]+)</span><span class="err">\</span><span class="s">.jar$'</span><span class="p">,</span> <span class="s">r'</span><span class="err">\</span><span class="s">1'</span><span class="p">,</span> <span class="n">jarfile</span><span class="p">)</span>
+  <span class="n">jar_deps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">,</span>
+    <span class="n">binary_jar</span> <span class="o">=</span> <span class="n">jarfile</span><span class="p">,</span>
+  <span class="p">)</span>
+</code></pre></div>
+<p>This is looping the libs folder and getting every <code>.jar</code> file. It&rsquo;s then appending the name of it (i.e. build target) to the JAR<em>DEPS (that&rsquo;s why it&rsquo;s called `JAR</em>DEPS<code>because this is an array of build rule names, which will become build targets that others rules depend on), and then calling the</code>prebuilt_jar` rule on it.</p>
+
+<p>The regex here is basically getting the name of the jar (e.g. gcm.jar) and creating a name (build target identifier) for it (.e.g jars__gcm). To see for yourself, you can check the goings-on inside the <code>buck-out/gen</code> folder when you do buck builds (here&rsquo;s a snippet of what might you will find below). This is what your build rules are generating!</p>
+
+<p><img center src='/media/buckout.png' /></p>
+
+<p><code>glob</code> does what you expect. It gets all the matching files in that directory.</p>
+
+<p>Our current built script looks like this:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="c"># ALL jars are handled up here.</span>
+
+<span class="n">JAR_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c">#### Build rules for every .jar in the /libs folder.</span>
+<span class="k">for</span> <span class="n">jarfile</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">([</span><span class="s">'libs/*.jar'</span><span class="p">]):</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'jars__'</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r'^.*/([^/]+)</span><span class="err">\</span><span class="s">.jar$'</span><span class="p">,</span> <span class="s">r'</span><span class="err">\</span><span class="s">1'</span><span class="p">,</span> <span class="n">jarfile</span><span class="p">)</span>
+  <span class="n">JAR_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">,</span>
+    <span class="n">binary_jar</span> <span class="o">=</span> <span class="n">jarfile</span><span class="p">,</span>
+  <span class="p">)</span>
+</code></pre></div>
+<p>This grabs all the .jar files in our libs folder and generates a name for it. It then adds the name to the JAR<em>DEPS array. Next, it creates the `prebuilt</em>jar<code>. This JAR_DEPS array is a list of</code>build targets` that we will use as a dependency later. Basically, it tells Buck that we require these files to be compiled first.</p>
+
+<p>To check that everything is going well, I would run <code>buck build pumpup</code> every time I add or change something. You should do the same as you set up your project!</p>
+
+<p>There is still more to do. Now it&rsquo;s time for&hellip;</p>
+
+<h3 id="coding-library-rules-for-library-projects">Coding Library Rules For Library Projects</h3>
+
+<h3 id="crosswalk-library-project">Crosswalk Library Project</h3>
+
+<p>Since I have the libs folder taken care of, it&rsquo;s time to tackle the Library Projects.</p>
+
+<p>Let&rsquo;s take a look at at a Library Project Xwalk:</p>
+
+<p><img center src='/media/xwalk.png' /></p>
+
+<p>Library Projects can have their own src, libraries, assets, and res folders. As with the main application code and resources/assets, I need to do the same for the external libraries (I&rsquo;ll cover this later). Before, it was easy to just use the <code>prebuilt_jar</code> rule ( I didn&rsquo;t put them into a android<em>library rule yet - I&rsquo;ll need to do that, but I am going to get all <code>.jars</code> first!). These libraries have a source code, libraries of their own, resources, and assets! That means these libraries will need to depend (<code>dep</code>) on some `android</em>resource` rules.</p>
+
+<p>This is the Library Project xwalk<em>core</em>library. Notice how it has a <code>libs</code> folder with <code>.jar</code> files of its own. It also has an <code>src</code> folder (which could have <code>.java</code> code, but in this case it does not). It also has a special <code>.so</code> (shared object, c++, Library, I will come back to that later). It also has its own <code>AndroidManifest.xml</code>, which is where I will get the package name from. It also has things we are going to completely ignore: <code>build.gradle</code>, <code>xwalk_core_library.iml</code>, and the <code>build</code> folder.</p>
+
+<p>Let&rsquo;s start with what we already know. Those two jar files look awfully familiar. Oh right, they&rsquo;re just like the <code>.jars</code> we have in our libs folder. I need to add the build rules for these. I also need to make sure the <code>android_library</code> rule for this will depend on the <code>android_resource</code> rule.</p>
+
+<p>This is why I choose to use a parse object (i.e. dictionary) that will contain all of the data needed to call the <code>prebuilt_jar</code>, <code>android_resource</code>, and <code>android_library</code> rules in a loop, each depending on the previous one. This way, I have one place to put ALL .jar files (technically, we could add the .jar files from our libs folder this way). Depending on your project, you might be better off explicitly declaring dependencies and having your own build order. I didn&rsquo;t notice any slow down, so I was happy to do it this way (if you find that your builds are slower, consider splitting your code into mulitple buck files and ditching the convienience dependencies).</p>
+
+<p>I added this to the <code>BuckConstants</code> file.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Build rules for every .jar not in the libs folder</span>
+<span class="n">PREBUILT_JARS</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-app-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_app_part.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-library-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_library_part.jar'</span><span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div>
+<p><code>PREBUILT_JARS</code> is where I will add all <code>.jar</code> objects that aren&rsquo;t in the <code>libs</code> folder. This covers the library projects and external libraries which are going to have jars.</p>
+
+<p>As you can see, I created a dictionary that has the name and path for the two jar files. This will be passed later to the <code>prebuilt_jar</code> rule in a loop that builds all of these and combines them from the ones I built from the <code>libs</code> folder to make one convienient android<em>library named &ldquo;all-jars&rdquo;. This will make it easy for the `android</em>resource<code>rule to depend on this, and later the final application</code>android<em>library<code>to depend on it as well. I will do the same thing with the</code>android</em>resource<code>rules and the</code>android_library rules.</p>
+
+<p>Now, I will create a loop that will go over each of these objects and call the <code>prebuilt_jar</code> rule on them in the <code>BUCK</code> file by adding</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#### Calls prebuilt_jar for each object in PREBUILT_JARS.</span>
+<span class="k">for</span> <span class="n">pJar</span> <span class="ow">in</span> <span class="n">PREBUILT_JARS</span><span class="p">:</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">pJar</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span>
+    <span class="n">binary_jar</span> <span class="o">=</span> <span class="n">pJar</span><span class="p">[</span><span class="s">'binary_jar'</span><span class="p">],</span>
+  <span class="p">)</span>
+  <span class="n">JAR_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">pJar</span><span class="p">[</span><span class="s">'name'</span><span class="p">])</span>
+</code></pre></div>
+<p>After I create the jars, I also append the name (which will be its build target) to the <code>JAR_DEPS</code> array (with the <code>:</code>, which is used as the target identifer tag). This will make it easy for the main application <code>android_library</code> rule to depend on only one &#39;jars&rsquo; rule later on (instead of keeping track of each binary rule individually, I can just pass this deps array).</p>
+
+<p>But I still need an <code>android_library</code> rule to compile all these <code>.jar</code> files as a library (including the ones I added from the <code>libs</code> folder). I will create that rule now.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#### Combines all jars into 1 library file.</span>
+<span class="n">android_library</span><span class="p">(</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'all-jars'</span><span class="p">,</span>
+  <span class="n">exported_deps</span> <span class="o">=</span> <span class="n">JAR_DEPS</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>I will short form that code later (by passing the arguments as a dictionary and using **).</p>
+
+<p>Remember the <code>JAR_DEPS</code> that I was adding all the names to from all the <code>PREBUILT_JARS</code>? Here, I am creating an <code>android_library</code> and I&rsquo;m passing the build targets from all those <code>prebuilt_jars</code>.</p>
+
+<p>I&rsquo;m taking all the <code>.jars</code> from the <code>libs</code> folder and all the <code>.jars</code> that are in the library projects and putting all of them into one dependency array, <code>JAR_DEPS</code>, to make one dependency for all the <code>.jar</code> files. What&rsquo;s nice is that now, any time I want to add a <code>.jar</code> file, all I do is add it to the appropriate dictionary object in the <code>BuckConstants</code> file (which I will be doing a lot of next).</p>
+
+<p>Let&rsquo;s take a look at everything in the BUCK file till now:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">re</span>
+<span class="n">include_defs</span><span class="p">(</span><span class="s">'//BuckConstants'</span><span class="p">)</span>
+<span class="c"># ALL jars are handled up here.</span>
+
+<span class="n">JAR_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c">#### Build rules for every .jar in the /libs folder.</span>
+<span class="k">for</span> <span class="n">jarfile</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">([</span><span class="s">'libs/*.jar'</span><span class="p">]):</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'jars__'</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r'^.*/([^/]+)</span><span class="err">\</span><span class="s">.jar$'</span><span class="p">,</span> <span class="s">r'</span><span class="err">\</span><span class="s">1'</span><span class="p">,</span> <span class="n">jarfile</span><span class="p">)</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">,</span>
+    <span class="n">binary_jar</span> <span class="o">=</span> <span class="n">jarfile</span><span class="p">,</span>
+  <span class="p">)</span>
+  <span class="n">JAR_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+
+<span class="c">#### Build rules for every .jar in the /ExternalLibraries folder. Add prebuilt jar rules here.</span>
+<span class="n">PREBUIT_JARS</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-app-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_app_part.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-library-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_library_part.jar'</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="c">#### Calls prebuilt_jar for each object in prebuilt_jars.</span>
+<span class="k">for</span> <span class="n">pJar</span> <span class="ow">in</span> <span class="n">prebuilt_jars</span><span class="p">:</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">pJar</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span>
+    <span class="n">binary_jar</span> <span class="o">=</span> <span class="n">pJar</span><span class="p">[</span><span class="s">'binary_jar'</span><span class="p">],</span>
+  <span class="p">)</span>
+  <span class="n">JAR_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">pJar</span><span class="p">[</span><span class="s">'name'</span><span class="p">])</span>
+
+<span class="c">#### Combines all jars into 1 library file. Res is not specified here because its handled by the individual lib rules later</span>
+<span class="n">android_library</span><span class="p">(</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'all-jars'</span><span class="p">,</span>
+  <span class="n">exported_deps</span> <span class="o">=</span> <span class="n">jar_deps</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Now it&rsquo;s time to use the ** rule I mentioned earlier. In the <code>BuckConstants</code> file, I add (also note I moved <code>JAR_DEPS</code> to here as well):</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">JAR_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">ALL_JARS_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'all-jars'</span><span class="p">,</span> <span class="s">'exported_deps'</span><span class="p">:</span><span class="n">JAR_DEPS</span><span class="p">}</span>
+</code></pre></div>
+<p>This will now let me change this rule in the <code>BUCK</code> file</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">android_library</span><span class="p">(</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'all-jars'</span><span class="p">,</span>
+  <span class="n">exported_deps</span> <span class="o">=</span> <span class="n">jar_deps</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>to</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#### Combines all jars into 1 library rule. This is a convienience dependency</span>
+<span class="n">android_library</span><span class="p">(</span><span class="o">**</span><span class="n">ALL_JARS_PARAMS</span><span class="p">)</span>
+</code></pre></div>
+<p>Cool. That&rsquo;s one part down . There&rsquo;s more to compile for this library project so I need to include some more rules. This library project has a <code>res</code> folder (which is under <code>src</code>). That means we need an <code>android_resource</code> rule. An <code>android_library</code> rule I am going to make later is going to depend on this.</p>
+
+<p>In the <code>BuckConstants</code> file, I add</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">RESOURCES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'xwalk-lib-res'</span><span class="p">,</span> <span class="s">'package'</span><span class="p">:</span><span class="s">'org.xwalk.core'</span><span class="p">,</span><span class="s">'res'</span><span class="p">:</span><span class="s">'xwalk_core_library/src/main/res'</span><span class="p">,</span> <span class="s">'assets'</span><span class="p">:</span><span class="bp">None</span><span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>I got the package name by opening the <code>AndroidManifest.xml</code> (the CrossWalk one) and by looking at the <code>package</code> tag. The <code>res</code> directory is the local path to the res folder.</p>
+
+<p><code>RESOURCES</code> is where I am going to add all resources from now on. In the <code>BUCK</code> file I will loop all objects inside <code>RESOURCES</code> and call <code>android_resource</code> on it. That&rsquo;s why I added the following to the BUCK file:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#### Builds android_resource for each resource in resources.</span>
+<span class="k">for</span> <span class="n">resource</span> <span class="ow">in</span> <span class="n">RESOURCES</span><span class="p">:</span>
+  <span class="n">android_resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span> <span class="n">package</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'package'</span><span class="p">],</span> <span class="n">res</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'res'</span><span class="p">],</span> <span class="n">assets</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'assets'</span><span class="p">])</span>
+</code></pre></div>
+<p>So that covers the resources for this library, but I still need an actual <code>android_library</code> rule that will take the <code>.jars</code>, <code>.java</code> (if there was any), <code>res</code>, and <code>assets</code>.</p>
+
+<p>For that, I am going to create another parse object in the <code>BuckConstants</code> (because when I add the next library project, I can also add what&rsquo;s needed to the RESOURCES and LIBRARIES arrays).</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LIBRARIES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'xwalk-lib'</span><span class="p">,</span><span class="s">'deps'</span><span class="p">:[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':xwalk-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span><span class="p">:[</span><span class="s">'xwalk_core_library/src/**/*.java'</span><span class="p">]},</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>Then, in the <code>BUCK</code> file, I need to go through all the <code>LIBRARIES</code> objects and call <code>android_library</code> on it, so to <code>BUCK</code> I add:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#### glob can't be set in the constants file, so we glob here else: AssertionError: Cannot use `glob()` at the top-level of an included file.</span>
+<span class="k">for</span> <span class="n">library</span> <span class="ow">in</span> <span class="n">LIBRARIES</span><span class="p">:</span>
+  <span class="n">library</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">]</span><span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">library</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">])</span>
+  <span class="n">android_library</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">library</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span><span class="n">deps</span> <span class="o">=</span> <span class="n">library</span><span class="p">[</span><span class="s">'deps'</span><span class="p">],</span><span class="n">srcs</span> <span class="o">=</span> <span class="n">library</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">])</span>
+  <span class="n">LIB_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">library</span><span class="p">[</span><span class="s">'name'</span><span class="p">])</span>
+</code></pre></div>
+<p>Now one thing you might notice is the step here:</p>
+
+<p><code>library[&#39;srcs&#39;] = glob(library[&#39;srcs&#39;])</code></p>
+
+<p>I can&rsquo;t call glob() in the constants file (since it&rsquo;s a <code>def</code> file), so I actually need to call glob in the BUCK file. The long way of this rule would be:</p>
+<div class="highlight"><pre><code class="language-" data-lang="">android_library(
+  name = 'main-lib',
+  srcs = glob(['xwalk_core_library/src/**/*.java'],
+  deps =[
+    ':all-jars',
+    ':xwalk-lib-res',
+  ]
+)
+</code></pre></div>
+<p>Notice how this library file depends on the <code>xwalk-lib-res</code> AND <code>all-jars</code>? That&rsquo;s because earlier, we grabbed the <code>.jar</code> files (remember the <code>PREBUIT_JARS</code> in <code>BuckConstants</code> and the loop in the <code>BUCK</code> file that calls <code>prebuilt_jar</code>) and bundled all its resoures and assets (with <code>RESOURCES</code> and the loop in the <code>BUCK</code> file that builds all of them with <code>android_resource</code>). This library project has been set up. Since I made all those parser objects in my <code>BuckConstants</code> and loops that handle them (by calling the appropriate build rule) in the <code>BUCK</code> file, adding another library project (and later the external libraries) will be very easy.</p>
+
+<p><img center src='/media/cordovalib.png' /></p>
+
+<p>This is the CordovaLib Library Project. This one does have <code>.java</code>files under the <code>src</code> folder, but it doesn&rsquo;t have any libraries (<code>.jars</code>) of its own.</p>
+
+<p>We will ignore the <code>test</code> and <code>build</code> folders, and all the <code>.xml</code> and <code>gradle</code> files. We only care about the <code>assets</code>, <code>res</code>, <code>src</code> folders.</p>
+
+<p>All I need to do is update the <code>RESOURCES</code> object with the values needed, and update the <code>LIBRARIES</code> object to build this.</p>
+
+<p>Here are the relevant updates to the <code>BuckConstants</code> file</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">RESOURCES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-lib-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'org.xwalk.core'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/src/main/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'cordova-lib-res'</span><span class="p">,</span> <span class="s">'package'</span><span class="p">:</span><span class="s">'org.apache.cordova'</span><span class="p">,</span><span class="s">'res'</span><span class="p">:</span><span class="s">'CordovaLib/res'</span><span class="p">,</span> <span class="s">'assets'</span><span class="p">:</span><span class="s">'CordovaLib/assets'</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="n">LIBRARIES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':xwalk-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'xwalk_core_library/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'cordova-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':cordova-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'CordovaLib/src/**/*.java'</span><span class="p">]},</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>There is one more trick for this. It actually has an <code>.so</code> library, so I needed to add it using the <a href="https://buckbuild.com/rule/prebuilt_native_library.html">prebuilt<em>native</em>library</a> rule (man, Buck takes care of everything!). So to <code>BuckConstants</code>, I added:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">PREBUILT_NATIVE_LIBARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'native_libs'</span><span class="p">,</span> <span class="s">'native_libs'</span><span class="p">:</span><span class="s">'xwalk_core_library/src/main/jniLibs'</span><span class="p">}</span>
+</code></pre></div>
+<p>and to the <code>BUCK</code> file, I added:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">prebuilt_native_library</span><span class="p">(</span><span class="o">**</span><span class="n">PREBUILT_NATIVE_LIBARY_PARAMS</span><span class="p">)</span>
+</code></pre></div>
+<p>Last but not least, I insert the Facebook plugin. It was special because it requires the <a href="">android<em>build</em>config</a> rule, so I added that rule as well. To add this plugin, I add this to <code>PREBUILT_JARS</code></p>
+<div class="highlight"><pre><code class="language-python" data-lang="python">  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'android-support-v4'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/android-support-v4.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'bolts'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/bolts-android-1.1.2.jar'</span><span class="p">},</span>
+</code></pre></div>
+<p>and this to `RESOURCES</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python">  <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'facebook-plugin-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.facebook.android'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+</code></pre></div>
+<p>and this to <code>LIBRARIES</code></p>
+<div class="highlight"><pre><code class="language-python" data-lang="python">  <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'facebook-plugin'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':facebook-plugin-res'</span><span class="p">,</span> <span class="s">':facebook_build_config'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/src/**/*.java'</span><span class="p">]},</span>
+</code></pre></div>
+<p>To add the buildconfig file it needs, I added this to the <code>BuckConstants</code> file:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">FACEBOOK_BUILD_CONFIG_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'facebook_build_config'</span><span class="p">,</span> <span class="s">'package'</span><span class="p">:</span><span class="s">'com.facebook.android'</span><span class="p">}</span>
+</code></pre></div>
+<p>and this to the <code>BUCK</code> file.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">android_build_config</span><span class="p">(</span><span class="o">**</span><span class="n">FACEBOOK_BUILD_CONFIG_PARAMS</span><span class="p">)</span>
+</code></pre></div>
+<p>Sometimes, you have files that depend on the state of your build. For instance, when you launch Android Studio using the standard play button or the debug button. If you launch with the debug button it, sets the <code>BUILD_CONFIG.DEBUG</code> flag to true. This plugin needed its own buildconfig file, so that&rsquo;s why it was added.</p>
+
+<p>That does it for library projects. Now its time for the trickiest part&hellip;</p>
+
+<h3 id="external-libraries">External Libraries</h3>
+
+<h4 id="external-libraries-setup">External Libraries Setup</h4>
+
+<p>In your <code>build.gradle</code> file for your project, you probably have something like this:</p>
+
+<p><img center src='/media/deps.png' /></p>
+
+<p>The ones like <code>compile &#39;com.android.support:support-v4:22.0.0&#39;</code> end up creating External Libraries. It downloads them from Maven and then stores them (in an exploded state).</p>
+
+<h3 id="the-quick-way">The Quick Way</h3>
+
+<p>You can build the library projects using the exploded aar folder and treat it just like an external library. However, I will go over the long way below.</p>
+
+<h3 id="the-long-way">The Long Way</h3>
+
+<p>This is where we need to do some digging.</p>
+
+<p>If you look on the Google Docs for <a href="http://developer.android.com/intl/es/tools/support-library/features.html">support libraries</a> you will see that it tells you where it keeps the files locally (which aren&rsquo;t in the project root I need).</p>
+
+<p>It tells me that I can look in <code>&lt;sdk&gt;/extras/android/support/v7/</code> to find the app compat 7 library. And guess what? All I need to do is create a local folder called <code>ExternalLibs</code> and drag in these files. Then, they are JUST like library projects and I can plug the data into the <code>PREBUILT_JARS</code>, <code>RESOURCES</code>, and <code>LIBRARIES</code> objects!</p>
+
+<p>The tricky part is knowing what you actually need to look for. For example, in the project there was all this:</p>
+
+<p><img center src='/media/externals.png' /></p>
+
+<p>There is some redundancy because there isn&rsquo;t a 1:1 correlation to adding something to your <code>build.gradle</code> file and getting one output here. For example, there are 4 <code>play-services</code> listed, but all of them &#39;belong&rsquo; to the <code>google-play-services</code> library.</p>
+
+<p>So I just navigated to <code>&lt;sdk&gt;/extras/android/support/v7/</code> path</p>
+
+<p><img center src='/media/fetch.png' /></p>
+
+<p>And grabbed the <code>res</code> folder, the <code>AndroidManifest.xml</code> and the <code>.jar</code> files (I have a plugin that also used app-compat-v4, so I removed it - otherwise, I&rsquo;ll get a duplicate dex merge error) and copied them into my <code>ExternalLibs</code> folder. I also did this for <code>multi-dex</code> and <code>google-play-services</code> by digging around in the <code>&lt;sdk&gt;/extras/android/</code> directory. This is what my <code>ExternalLibs</code> ended up looking like.</p>
+
+<p><img center src='/media/externallibs.png' /></p>
+
+<p>This is now EXACTLY like a library project, so I just need to update the <code>PREBUILT_JARS</code>, <code>RESOURCES</code>, and <code>LIBRARIES</code> objects with the appropriate paths. (Am I repeating myself? Good!).</p>
+
+<p>Here&rsquo;s what the <code>BuckConstants</code> looks like with all the .jars, library projects, and external libraries handled:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Build rules for every .jar in the /ExternalLibraries folder. Add prebuilt jar rules here.</span>
+
+<span class="n">PREBUILT_JARS</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-app-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_app_part.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-library-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_library_part.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'appcompat-v7-22.0.0-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'ExternalLibs/appcompat-v7-22.0.0/android-support-v7-appcompat.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'google-play-services-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'ExternalLibs/google-play-services_lib/google-play-services.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'android-support-v4'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/android-support-v4.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'bolts'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/bolts-android-1.1.2.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'multidex-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'ExternalLibs/multidex/android-support-multidex.jar'</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="c"># Build rules for all resources.</span>
+
+<span class="n">RESOURCES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'appcompat-v7-22.0.0-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'android.support.v7.appcompat'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'ExternalLibs/appcompat-v7-22.0.0/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'google-play-services-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.google.android.gms'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'ExternalLibs/google-play-services_lib/res'</span><span class="p">,</span> <span class="s">'assets'</span><span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'facebook-plugin-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.facebook.android'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-lib-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'org.xwalk.core'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/src/main/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'cordova-lib-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'org.apache.cordova'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'CordovaLib/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="s">'CordovaLib/assets'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'co.pumpup.app'</span><span class="p">,</span> <span class="s">'res'</span><span class="p">:</span> <span class="s">'res'</span><span class="p">,</span> <span class="s">'assets'</span><span class="p">:</span> <span class="s">'assets'</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="c"># Holds the name of all library build rules (except the main library).</span>
+
+<span class="n">LIB_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># Note: adding v4 causes a duplicate file crash with android-support-v4 from the Facebook plugin.</span>
+<span class="c"># Build rules all libraries.</span>
+
+<span class="n">LIBRARIES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'appcompat-v7-22.0.0-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':appcompat-v7-22.0.0-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'google-play-services-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span><span class="s">':google-play-services-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'multidex-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':xwalk-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'xwalk_core_library/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'cordova-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':cordova-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'CordovaLib/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'facebook-plugin'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':facebook-plugin-res'</span><span class="p">,</span> <span class="s">':facebook_build_config'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'application-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':build-config'</span><span class="p">,</span> <span class="s">':jars__buck-android-support'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="n">APP_CLASS_SOURCE</span><span class="p">]},</span>
+<span class="p">]</span>
+
+<span class="c"># This is required for CrossWalk .so Library</span>
+
+<span class="n">PREBUILT_NATIVE_LIBARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'native_libs'</span><span class="p">,</span> <span class="s">'native_libs'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/src/main/jniLibs'</span><span class="p">}</span>
+
+<span class="c"># Dependency rules for the main application library.</span>
+
+<span class="n">ALL_JARS_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'all-jars'</span><span class="p">,</span> <span class="s">'exported_deps'</span> <span class="p">:</span> <span class="n">JAR_DEPS</span><span class="p">}</span>
+<span class="n">ALL_LIBS_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'all-libs'</span><span class="p">,</span> <span class="s">'exported_deps'</span> <span class="p">:</span> <span class="n">LIB_DEPS</span><span class="p">}</span>
+
+<span class="c"># Required by Buck to build with the keystore rule.</span>
+
+<span class="n">KEYSTORE_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'debug_keystore'</span><span class="p">,</span> <span class="s">'store'</span> <span class="p">:</span> <span class="s">'keystore/debug.keystore'</span><span class="p">,</span> <span class="s">'properties'</span> <span class="p">:</span> <span class="s">'keystore/debug.keystore.properties'</span><span class="p">}</span>
+
+<span class="n">FACEBOOK_BUILD_CONFIG_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'facebook_build_config'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.facebook.android'</span><span class="p">}</span>
+</code></pre></div>
+<h3 id="exopackage">Exopackage</h3>
+
+<h4 id="exopackage-setup">Exopackage Setup</h4>
+
+<p>Up until now, I&rsquo;ve been doing everything in the project except the root project files and resources. It&rsquo;s time to do that (and it&rsquo;s why I do the top level build rules as separate calls - now, all the libraries are made and the main application will depend on all of those made first).</p>
+
+<p>Determining what you need to build can be a little confusing so I am going to gernally outline the process, though it&rsquo;s easier to pick out the files you need (a lot of folders and files are for the IDE and gradle). Because I have all the libraries handled, all I need are the <code>src</code>, <code>res</code>, <code>assets</code> and <code>AndroidManifest</code> files to make the binary. But because I am using Exopackage, I need to do an update.</p>
+
+<p>It&rsquo;s explained <a href="https://buckbuild.com/article/exopackage.html#use-exopackage">pretty well here</a>.</p>
+
+<p>I built the <a href="https://buckbuild.com/article/exopackage.html#build-buck-support-library">buck-support-jar</a> and put it in the <code>libs</code> folder (which means it&rsquo;s handled already because of the regex loop I wrote at the beginning that gets <code>.jars</code> in the `libs1 folder)</p>
+
+<p>I created an AppShell.java file:</p>
+<div class="highlight"><pre><code class="language-" data-lang="">/**
+ * Buck support build file.
+ */
+public class AppShell extends ExopackageApplication
+{
+    public AppShell()
+    {
+        //co.pumpup.app.BuildConfig.EXOPACKAGE_FLAGS
+        super(1);
+    }
+
+}
+</code></pre></div>
+<p>I couldn&rsquo;t actually get it to work with the BuildConfig, so I just pass 1 for now and left it commented.</p>
+
+<p>I added an ExopackageApp file</p>
+<div class="highlight"><pre><code class="language-Java" data-lang="Java">public class ExopackageApp extends DefaultApplicationLike
+{
+    private final Application appContext;
+
+    public ExopackageApp(Application appContext)
+    {
+        this.appContext = appContext;
+    }
+
+    <a href='http://github.com/Override'>@Override</a>
+    public void onCreate()
+    {
+        super.onCreate();
+        ParsePlugin.initializeParseWithApplication(appContext);
+    }
+}
+</code></pre></div>
+<p>And updated my <code>AndroidManifest.xml</code> name tag in the application to <code>android:name=&quot;.AppShell&quot;</code>.</p>
+
+<h3 id="binary-rules">Binary Rules</h3>
+
+<h4 id="build-config">Build Config</h4>
+
+<p>Next, I need to make the build config file for the app.</p>
+
+<p>I add this to <code>BuckConstants</code></p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ANDROID_BUILD_CONFIG_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span><span class="p">:</span><span class="s">'build-config'</span><span class="p">,</span> <span class="s">'package'</span><span class="p">:</span> <span class="s">'co.pumpup.app'</span><span class="p">}</span>
+</code></pre></div>
+<p>and this to <code>BUCK</code></p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">android_build_config</span><span class="p">(</span><span class="o">**</span><span class="n">ANDROID_BUILD_CONFIG_PARAMS</span><span class="p">)</span>
+
+</code></pre></div>
+<p>The BuildConfig.java should have the   <code>public static final int EXOPACKAGE_FLAGS = 1;</code>, but it didn&rsquo;t for me. This  is why I hard coded the 1 in my AppShell.</p>
+
+<h4 id="android-binary-amp-main-library-rules">Android Binary &amp; Main Library Rules</h4>
+
+<p>Next, I am going to make the application library. I need to exclude the <code>AppShell</code> and <code>buck-support-library</code>.</p>
+
+<p>So to the <code>BuckConstants</code> I add:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">APP_CLASS_SOURCE</span> <span class="o">=</span> <span class="s">'src/co/pumpup/app/AppShell.java'</span>
+</code></pre></div>
+<p>And then I create a parse object for the main library. In the <code>BuckConstants</code> file I add:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">'name'</span><span class="p">:</span><span class="s">'main-lib'</span><span class="p">,</span>
+  <span class="s">'srcs'</span><span class="p">:[</span><span class="s">'src/**/*.java'</span><span class="p">],</span>
+  <span class="s">'deps'</span><span class="p">:[</span>
+    <span class="s">':all-jars'</span><span class="p">,</span>
+    <span class="s">':all-libs'</span><span class="p">,</span>
+    <span class="s">':native_libs'</span><span class="p">,</span>
+    <span class="s">':res'</span><span class="p">,</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>and to the <code>BUCK</code> file I add:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">]</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">],</span> <span class="n">excludes</span> <span class="o">=</span> <span class="p">[</span><span class="n">APP_CLASS_SOURCE</span><span class="p">])</span>
+<span class="n">android_library</span><span class="p">(</span><span class="o">**</span><span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span><span class="p">)</span>
+</code></pre></div>
+<p>(remember, you can&rsquo;t glob in a constants file so I do the glob step here).</p>
+
+<p>Last but not least, I need to create the <code>android_binary</code> rule. This is the final step and it depends on everything else (no wonder it&rsquo;s last!).</p>
+
+<p>Here is what I added to the <code>BuckConstants</code> file:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ANDROID_BINARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">'name'</span><span class="p">:</span><span class="s">'pumpup'</span><span class="p">,</span>
+  <span class="s">'linear_alloc_hard_limit'</span><span class="p">:</span><span class="mi">16</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>
+  <span class="s">'use_linear_alloc_split_dex'</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span>
+  <span class="s">'manifest'</span><span class="p">:</span><span class="s">'AndroidManifest.xml'</span><span class="p">,</span>
+  <span class="s">'keystore'</span><span class="p">:</span><span class="s">':debug_keystore'</span><span class="p">,</span>
+  <span class="s">'use_split_dex'</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span>
+  <span class="s">'exopackage_modes'</span><span class="p">:[</span><span class="s">'secondary_dex'</span><span class="p">],</span>
+  <span class="s">'primary_dex_patterns'</span><span class="p">:[</span>
+    <span class="s">'^co/pumpup/app/AppShell^'</span><span class="p">,</span>
+    <span class="s">'^co/pumpup/app/BuildConfig^'</span><span class="p">,</span>
+    <span class="s">'^com/facebook/buck/android/support/exopackage/'</span><span class="p">,</span>
+  <span class="p">],</span>
+  <span class="s">'deps'</span><span class="p">:[</span>
+    <span class="s">':main-lib'</span><span class="p">,</span>
+    <span class="s">':application-lib'</span><span class="p">,</span>
+  <span class="p">],</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>then to the <code>BUCK</code> file I add:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">android_binary</span><span class="p">(</span><span class="o">**</span><span class="n">ANDROID_BINARY_PARAMS</span><span class="p">)</span>
+</code></pre></div>
+<p>I was getting a dex merge error saying the files were too big, so I had to add the <code>linear_alloc_hard_limit</code> and <code>use_linear_alloc_split_dex</code> rules. The rest is pretty straightforward except the <code>primary_dex_patterns</code>. The <code>primary_dex_patterns</code> are anything your class needs to initialize goes here (otherwise you will get a crash).</p>
+
+<p>After all this, I can now build the Android project at light speed:</p>
+
+<p><img center src='/media/fast.png' /></p>
+
+<h3 id="completed-buck-files">Completed Buck Files</h3>
+
+<p>Here is the final <code>BuckConstants</code> file.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># These are all the build rules and dependency arrays to build PumpUp. The BUCK file will use these as appropriate</span>
+<span class="c"># arguments when building the .apk.</span>
+
+<span class="c"># AppShell path for exopackage.</span>
+
+<span class="n">APP_CLASS_SOURCE</span> <span class="o">=</span> <span class="s">'src/co/pumpup/app/AppShell.java'</span>
+
+<span class="c"># Holds name of all .jar's build with the prebuilt_jar rule.</span>
+
+<span class="n">JAR_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># Regex search and split values for searching libs folder.</span>
+
+<span class="n">REGEX_SEARCH</span> <span class="o">=</span> <span class="s">r'^.*/([^/]+)</span><span class="err">\</span><span class="s">.jar$'</span>
+<span class="n">REGEX_SPLIT</span> <span class="o">=</span> <span class="s">r'</span><span class="err">\</span><span class="s">1'</span>
+
+<span class="c"># Build rules for every .jar in the /ExternalLibraries folder. Add prebuilt jar rules here.</span>
+
+<span class="n">PREBUILT_JARS</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-app-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_app_part.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-library-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/libs/xwalk_core_library_java_library_part.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'appcompat-v7-22.0.0-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'ExternalLibs/appcompat-v7-22.0.0/android-support-v7-appcompat.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'google-play-services-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'ExternalLibs/google-play-services_lib/google-play-services.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'android-support-v4'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/android-support-v4.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'bolts'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/libs/bolts-android-1.1.2.jar'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'multidex-jar'</span><span class="p">,</span> <span class="s">'binary_jar'</span> <span class="p">:</span> <span class="s">'ExternalLibs/multidex/android-support-multidex.jar'</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="c"># Build rules for all resources.</span>
+
+<span class="n">RESOURCES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'appcompat-v7-22.0.0-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'android.support.v7.appcompat'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'ExternalLibs/appcompat-v7-22.0.0/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'google-play-services-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.google.android.gms'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'ExternalLibs/google-play-services_lib/res'</span><span class="p">,</span> <span class="s">'assets'</span><span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'facebook-plugin-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.facebook.android'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-lib-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'org.xwalk.core'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/src/main/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'cordova-lib-res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'org.apache.cordova'</span><span class="p">,</span> <span class="s">'res'</span> <span class="p">:</span> <span class="s">'CordovaLib/res'</span><span class="p">,</span> <span class="s">'assets'</span> <span class="p">:</span> <span class="s">'CordovaLib/assets'</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'res'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'co.pumpup.app'</span><span class="p">,</span> <span class="s">'res'</span><span class="p">:</span> <span class="s">'res'</span><span class="p">,</span> <span class="s">'assets'</span><span class="p">:</span> <span class="s">'assets'</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="c"># Holds the name of all library build rules (except the main library).</span>
+
+<span class="n">LIB_DEPS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># Note: adding v4 causes a duplicate file crash with android-support-v4 from the Facebook plugin.</span>
+<span class="c"># Build rules all libraries.</span>
+
+<span class="n">LIBRARIES</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'appcompat-v7-22.0.0-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':appcompat-v7-22.0.0-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'google-play-services-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span><span class="s">':google-play-services-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'multidex-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'xwalk-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':xwalk-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'xwalk_core_library/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'cordova-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':cordova-lib-res'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'CordovaLib/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'facebook-plugin'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':facebook-plugin-res'</span><span class="p">,</span> <span class="s">':facebook_build_config'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'com.phonegap.plugins.facebookconnect/app-FacebookLib/src/**/*.java'</span><span class="p">]},</span>
+  <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'application-lib'</span><span class="p">,</span> <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span><span class="s">':all-jars'</span><span class="p">,</span> <span class="s">':build-config'</span><span class="p">,</span> <span class="s">':jars__buck-android-support'</span><span class="p">],</span> <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="n">APP_CLASS_SOURCE</span><span class="p">]},</span>
+<span class="p">]</span>
+
+<span class="c"># This is required for CrossWalk .so Library</span>
+
+<span class="n">PREBUILT_NATIVE_LIBARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'native_libs'</span><span class="p">,</span> <span class="s">'native_libs'</span> <span class="p">:</span> <span class="s">'xwalk_core_library/src/main/jniLibs'</span><span class="p">}</span>
+
+<span class="c"># Dependency rules for the main application library.</span>
+
+<span class="n">ALL_JARS_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'all-jars'</span><span class="p">,</span> <span class="s">'exported_deps'</span> <span class="p">:</span> <span class="n">JAR_DEPS</span><span class="p">}</span>
+<span class="n">ALL_LIBS_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'all-libs'</span><span class="p">,</span> <span class="s">'exported_deps'</span> <span class="p">:</span> <span class="n">LIB_DEPS</span><span class="p">}</span>
+
+<span class="c"># Required by Buck to build with the keystore rule.</span>
+
+<span class="n">KEYSTORE_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'debug_keystore'</span><span class="p">,</span> <span class="s">'store'</span> <span class="p">:</span> <span class="s">'keystore/debug.keystore'</span><span class="p">,</span> <span class="s">'properties'</span> <span class="p">:</span> <span class="s">'keystore/debug.keystore.properties'</span><span class="p">}</span>
+
+<span class="c"># The build config objects for the main application and the Facebook plugin</span>
+
+<span class="n">ANDROID_BUILD_CONFIG_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'build-config'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'co.pumpup.app'</span><span class="p">}</span>
+<span class="n">FACEBOOK_BUILD_CONFIG_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s">'name'</span> <span class="p">:</span> <span class="s">'facebook_build_config'</span><span class="p">,</span> <span class="s">'package'</span> <span class="p">:</span> <span class="s">'com.facebook.android'</span><span class="p">}</span>
+
+<span class="c"># The main application library.</span>
+
+<span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">'name'</span> <span class="p">:</span> <span class="s">'main-lib'</span><span class="p">,</span>
+  <span class="s">'srcs'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'src/**/*.java'</span><span class="p">],</span>
+  <span class="s">'deps'</span> <span class="p">:</span> <span class="p">[</span>
+    <span class="s">':all-jars'</span><span class="p">,</span>
+    <span class="s">':all-libs'</span><span class="p">,</span>
+    <span class="s">':native_libs'</span><span class="p">,</span>
+    <span class="s">':res'</span><span class="p">,</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c"># The final .apk step. The linear_alloc_hard needs to be set because our dex files are larger than 4mb.</span>
+<span class="c"># use_linear_alloc_split_dex &amp; use_split_dex must be set to true.</span>
+
+<span class="n">ANDROID_BINARY_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">'name'</span> <span class="p">:</span> <span class="s">'pumpup'</span><span class="p">,</span>
+  <span class="s">'linear_alloc_hard_limit'</span> <span class="p">:</span> <span class="mi">16</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>
+  <span class="s">'use_linear_alloc_split_dex'</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+  <span class="s">'manifest'</span> <span class="p">:</span> <span class="s">'AndroidManifest.xml'</span><span class="p">,</span>
+  <span class="s">'keystore'</span> <span class="p">:</span> <span class="s">':debug_keystore'</span><span class="p">,</span>
+  <span class="s">'use_split_dex'</span> <span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+  <span class="s">'exopackage_modes'</span> <span class="p">:</span> <span class="p">[</span><span class="s">'secondary_dex'</span><span class="p">],</span>
+  <span class="s">'primary_dex_patterns'</span> <span class="p">:</span> <span class="p">[</span>
+    <span class="s">'^co/pumpup/app/AppShell^'</span><span class="p">,</span>
+    <span class="s">'^co/pumpup/app/BuildConfig^'</span><span class="p">,</span>
+    <span class="s">'^com/facebook/buck/android/support/exopackage/'</span><span class="p">,</span>
+  <span class="p">],</span>
+  <span class="s">'deps'</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s">':main-lib'</span><span class="p">,</span>
+    <span class="s">':application-lib'</span><span class="p">,</span>
+  <span class="p">],</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>And here is the final <code>Buck</code> file.</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># These are the build rules which use arguments from BuckConstants to build all the files for the .apk.</span>
+<span class="c"># This speeds up Android Studio build times to about 10 seconds from 3 minutes.</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="n">include_defs</span><span class="p">(</span><span class="s">'//BuckConstants'</span><span class="p">)</span>
+
+<span class="c"># Handles prebuilt_jars rule for jars in the libs folder updates JAR_DEPS.</span>
+
+<span class="k">for</span> <span class="n">jarfile</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">([</span><span class="s">'libs/*.jar'</span><span class="p">]):</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">'jars__'</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">REGEX_SEARCH</span><span class="p">,</span> <span class="n">REGEX_SPLIT</span><span class="p">,</span> <span class="n">jarfile</span><span class="p">)</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">,</span> <span class="n">binary_jar</span> <span class="o">=</span> <span class="n">jarfile</span><span class="p">)</span>
+  <span class="n">JAR_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+<span class="c"># Handles the jars in the ExternalLibs folder and updates JAR_DEPS.</span>
+
+<span class="k">for</span> <span class="n">jar</span> <span class="ow">in</span> <span class="n">PREBUILT_JARS</span><span class="p">:</span>
+  <span class="n">prebuilt_jar</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">jar</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span><span class="n">binary_jar</span> <span class="o">=</span> <span class="n">jar</span><span class="p">[</span><span class="s">'binary_jar'</span><span class="p">])</span>
+  <span class="n">JAR_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">jar</span><span class="p">[</span><span class="s">'name'</span><span class="p">])</span>
+
+<span class="c"># Combines all jars into one library rule. This is a convienience dependency.</span>
+
+<span class="n">android_library</span><span class="p">(</span><span class="o">**</span><span class="n">ALL_JARS_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Builds android_resource for each resource in RESOURCES.</span>
+
+<span class="k">for</span> <span class="n">resource</span> <span class="ow">in</span> <span class="n">RESOURCES</span><span class="p">:</span>
+  <span class="n">android_resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span> <span class="n">package</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'package'</span><span class="p">],</span> <span class="n">res</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'res'</span><span class="p">],</span> <span class="n">assets</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="s">'assets'</span><span class="p">])</span>
+
+<span class="c"># glob can't be set in the constants file, so we glob here else: AssertionError: Cannot use `glob()` at the top-level of an included file.</span>
+<span class="c"># Builds android_libraary for each library in LIBRARIES.</span>
+
+<span class="k">for</span> <span class="n">library</span> <span class="ow">in</span> <span class="n">LIBRARIES</span><span class="p">:</span>
+  <span class="n">library</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">]</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">library</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">])</span>
+  <span class="n">android_library</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">library</span><span class="p">[</span><span class="s">'name'</span><span class="p">],</span><span class="n">deps</span> <span class="o">=</span> <span class="n">library</span><span class="p">[</span><span class="s">'deps'</span><span class="p">],</span><span class="n">srcs</span> <span class="o">=</span> <span class="n">library</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">])</span>
+  <span class="n">LIB_DEPS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">':'</span> <span class="o">+</span> <span class="n">library</span><span class="p">[</span><span class="s">'name'</span><span class="p">])</span>
+
+<span class="c"># Combines all libraries into one dependency (except the main library).</span>
+
+<span class="n">android_library</span><span class="p">(</span><span class="o">**</span><span class="n">ALL_LIBS_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Special rule for the .so library in CrossWalk.</span>
+
+<span class="n">prebuilt_native_library</span><span class="p">(</span><span class="o">**</span><span class="n">PREBUILT_NATIVE_LIBARY_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Sets keystore config which is required for builds.</span>
+
+<span class="n">keystore</span><span class="p">(</span><span class="o">**</span><span class="n">KEYSTORE_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Builds the required build config file for Facebook plugin.</span>
+
+<span class="n">android_build_config</span><span class="p">(</span><span class="o">**</span><span class="n">FACEBOOK_BUILD_CONFIG_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Builds the build config file for the main .apk.</span>
+<span class="n">android_build_config</span><span class="p">(</span><span class="o">**</span><span class="n">ANDROID_BUILD_CONFIG_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Builds the main library for the .apk. glob must be called here (not in BuckConstants).</span>
+
+<span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">]</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span><span class="p">[</span><span class="s">'srcs'</span><span class="p">],</span> <span class="n">excludes</span> <span class="o">=</span> <span class="p">[</span><span class="n">APP_CLASS_SOURCE</span><span class="p">])</span>
+<span class="n">android_library</span><span class="p">(</span><span class="o">**</span><span class="n">ANDROID_MAIN_LIBRARY_PARAMS</span><span class="p">)</span>
+
+<span class="c"># Builds the .apk and is the final build step.</span>
+
+<span class="n">android_binary</span><span class="p">(</span><span class="o">**</span><span class="n">ANDROID_BINARY_PARAMS</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="errors">Errors:</h3>
+
+<p><strong><em>Couldn&rsquo;t get dependency:</em></strong> You mis-named something (e.g. myJar.jar instead of myJar-1.1.jar) or missing “,” in deps.</p>
+
+<p><strong><em>BUILD FAILED: //:all-lib-jars: parameter &#39;deps&rsquo;: cannot coerce:</em></strong> Wrong path to target, missing comma, or wrong build target.</p>
+
+<p><strong><em>package org.xwalk.core does not exist</em></strong>. Check dependencies and package name spelling.</p>
+
+<p><strong><em>error: cannot find symbol import com.facebook.android.R;</em></strong> Check package name spelling.</p>
+
+<p><strong><em>error: cannot find symbol import com.facebook.android.BuildConfig;</em></strong> This library project needs a build config file. Need the <a href="https://buckbuild.com/rule/android_build_config.html">android<em>build</em>config</a> rule.</p>
+
+<p><strong><em>failed on step symlink_assets with an exception: Multiple entries with same key:</em></strong></p>
+
+<p><a href="https://github.com/facebook/buck/commit/03a5c117fcb9e62664f830827f5b63a4f04c7266">https://github.com/facebook/buck/commit/03a5c117fcb9e62664f830827f5b63a4f04c7266</a></p>
+
+<p>This was a bug that was patched out. Make sure your buck is using the latest version.</p>
+
+<p><strong><em>nothing matches overlay file icon.png, for flavor</em></strong> This went away once my project was building properly with Buck.</p>
+
+<p><strong><em>res/drawable-mdpi/doneicon_nc.png: libpng warning: iCCP: Not recognizing known sRGB profile that has been edited</em></strong> This went away once my project was building properly with Buck (I suspect it was an issue with a library wanting something it didn&rsquo;t have).</p>
+
+<p><strong><em>Couldn&rsquo;t get dependency &rsquo;//:appcompat-v7-22.0.0-lib&rsquo; of target &rsquo;//:all-lib-jars&rsquo;:</em></strong> You are missing a rule by that name because it can&rsquo;t find that dependency (spelling?).</p>
+
+<p><strong>BUILD FAILED: When the &#39;res&rsquo; is specified for android_resource() //:appcompat-v7-22.0.0-res, at least one of &#39;package&rsquo; or &#39;manifest&rsquo; must be specified.</strong><br>
+Needs the build rule package. Get it from the AndroidManifest.xml. (Note manifest is not a supported argument on the site at least? Documentation issue?)</p>
+
+<p><em>**res/values/theme.xml:3: error: Error retrieving parent for item: No resource found that matches the given name &#39;Theme.AppCompat.Light.NoActionBar&rsquo;.</em>* Getting the external lib in (app compat v7) fixed this.</p>
+
+<p><strong><em>ExternalLibs/appcompat-v7-22.0.0/res/values-v23/styles_base.xml:20: error: Error retrieving parent for item: No resource found that matches the given name &#39;android:Widget.Material.Button.Colored&rsquo;.</em></strong><br>
+This one was an issue.</p>
+
+<p><a href="http://stackoverflow.com/questions/32075498/error-retrieving-parent-for-item-no-resource-found-that-matches-the-given-name">http://stackoverflow.com/questions/32075498/error-retrieving-parent-for-item-no-resource-found-that-matches-the-given-name</a></p>
+
+<p>Bad News: Setting<br>
+<code>python<br>
+[android]<br>
+    target = Google Inc.:Google APIs:23<br>
+</code></p>
+
+<p>In the .buckconfig does fix this error. But I didnt WANT to compile against that. I&rsquo;ve left it for now but it needs to be changed to 22.</p>
+
+<p><strong><em>BUILD FAILED: Secondary dex exceeds linear alloc limit.</em></strong><br>
+<a href="https://github.com/facebook/buck/issues/385">https://github.com/facebook/buck/issues/385</a> adding this to the <code>android_binary</code> fixes it.<br>
+<code><br>
+use_linear_alloc_split_dex = true<br>
+linear_alloc_hard_limit = 16 * 1024 * 1024,<br>
+</code></p>
+
+<p><strong><em>There was an error in smart dexing step<br>
+com.facebook.buck.step.StepFailedException: Failed on step dx<em>&amp;&amp;</em>write<em>file with an exception:<br>
+Multiple dex files define Lco/pumpup/app/AppShell;<br>
+BUILD FAILED: //:pumpup#dex</em>merge failed with exit code 1:<br>
+smart_dex</em></strong></p>
+
+<p><a href="http://stackoverflow.com/questions/26342444/multiple-dex-files-define-landroid-support-annotation-animres">http://stackoverflow.com/questions/26342444/multiple-dex-files-define-landroid-support-annotation-animres</a></p>
+
+<p>Here I was a conflict between <code>app-compat-v4</code> being added twice (because a plugin also added it. Removing my extra copy fixed it.</p>
+
+<p><strong><em>SPECIAL CROSSWALK ISSUE</em></strong><br>
+In the off chance you have CrossWalk I got a really nasty error that made no sense but it was because I didn&rsquo;t include the .so file it needed.</p>
+
+<p><a href="https://crosswalk-project.org/jira/browse/XWALK-3615">https://crosswalk-project.org/jira/browse/XWALK-3615</a></p>
+
+<p>Adding the rule<br>
+<code>python<br>
+prebuilt_native_library(<br>
+  name = &#39;native_libs&#39;,<br>
+  native_libs = &#39;xwalk_core_library/src/main/jniLibs&#39;,<br>
+)<br>
+</code><br>
+fixes it.</p>
+
+
+      
+
+    
+
+  </div>
+</article>
+
+
+
+  
+
+    <footer class="footer gui-flip">
+      <div class="content">
+        
+          <div class="content__box content__box--flat">
+            <a class="button-block" href="/">Back to home</a>
+          </div>
+        
+        <div class="content__box aligncenter">
+          <ul class="list--plain list--inline">
+            <li class="list__item">
+              <a class="button-cube" href="http://twitter.com/pumpup" target="_blank">
+                <span class="gui-icon gui-icon--twitter"></span>
+              </a>
+            </li><!--
+           --><li class="list__item">
+              <a class="button-cube" href="http://github.com/pumpupapp" target="_blank">
+                <span class="gui-icon gui-icon--github"></span>
+              </a>
+            </li><!--
+           --><li class="list__item">
+              <a class="button-cube" href="mailto:support@pumpup.com">
+                <span class="gui-icon gui-icon--email"></span>
+              </a>
+            </li>
+          </ul>
+          <p>&copy; 2015 PumpUp</p>
+        </div>
+      </div>
+    </footer> <!-- .footer -->
+
+  
+
+
+  <script src="/js/main.js"></script>
+
+
+</html>
+
+
